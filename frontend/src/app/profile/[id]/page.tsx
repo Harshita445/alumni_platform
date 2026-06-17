@@ -1,31 +1,31 @@
-import Link from "next/link";
+import Image from "next/image";
+import { notFound } from "next/navigation";
 
 import { mockAlumni } from "@/data/mockAlumni";
-import { mockReviews } from "@/data/mockReviews";
+
+type ProfilePageProps = {
+  params: Promise<{
+    id: string;
+  }>;
+};
 
 export default async function ProfilePage({
   params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
+}: ProfilePageProps) {
   const { id } = await params;
 
   const alumni = mockAlumni.find(
     (person) => person.id === id
   );
 
-  const reviews = mockReviews.filter(
-    (review) => review.alumniId === id
-  );
-
   if (!alumni) {
-    return <h1>Alumni not found</h1>;
+    notFound();
   }
 
   return (
     <main
       style={{
-        maxWidth: "900px",
+        maxWidth: "800px",
         margin: "0 auto",
         padding: "48px 24px 80px",
       }}
@@ -37,9 +37,20 @@ export default async function ProfilePage({
           borderRadius: "var(--radius-lg)",
           padding: "40px",
           boxShadow: "var(--shadow-sm)",
-          marginBottom: "32px",
         }}
       >
+        <Image
+          src={alumni.profileImage}
+          alt={alumni.name}
+          width={120}
+          height={120}
+          style={{
+            borderRadius: "50%",
+            objectFit: "cover",
+            marginBottom: "24px",
+          }}
+        />
+
         <h1
           style={{
             marginBottom: "12px",
@@ -51,7 +62,7 @@ export default async function ProfilePage({
         <p
           style={{
             color: "var(--text-secondary)",
-            marginBottom: "20px",
+            marginBottom: "8px",
           }}
         >
           {alumni.role} · {alumni.company}
@@ -59,26 +70,27 @@ export default async function ProfilePage({
 
         <p
           style={{
-            lineHeight: 1.7,
+            color: "var(--text-secondary)",
+            marginBottom: "32px",
+          }}
+        >
+          Class of {alumni.graduationYear}
+        </p>
+
+        <p
+          style={{
+            lineHeight: 1.8,
             marginBottom: "32px",
           }}
         >
           {alumni.bio}
         </p>
 
-        <h3
-          style={{
-            marginBottom: "16px",
-          }}
-        >
-          Session Types
-        </h3>
-
         <div
           style={{
             display: "flex",
-            flexWrap: "wrap",
             gap: "12px",
+            flexWrap: "wrap",
             marginBottom: "32px",
           }}
         >
@@ -86,10 +98,11 @@ export default async function ProfilePage({
             <span
               key={session}
               style={{
-                padding: "10px 14px",
+                padding: "8px 14px",
                 borderRadius: "999px",
                 background:
                   "var(--surface-secondary)",
+                fontSize: "14px",
               }}
             >
               {session}
@@ -97,73 +110,53 @@ export default async function ProfilePage({
           ))}
         </div>
 
-        <Link
-          href={`/bookings?alumniId=${alumni.id}`}
-          style={{
-            display: "inline-block",
-            background: "var(--primary)",
-            color: "white",
-            padding: "14px 22px",
-            borderRadius: "var(--radius-md)",
-          }}
-        >
-          Book a Session
-        </Link>
-      </div>
-
-      <section>
-        <h2
-          style={{
-            marginBottom: "24px",
-          }}
-        >
-          Reviews
-        </h2>
-
         <div
           style={{
             display: "flex",
-            flexDirection: "column",
-            gap: "16px",
+            gap: "24px",
+            flexWrap: "wrap",
           }}
         >
-          {reviews.map((review) => (
-            <div
-              key={review.id}
+          <div>
+            <p
               style={{
-                background: "var(--surface)",
-                border: "1px solid var(--border)",
-                borderRadius: "var(--radius-md)",
-                padding: "24px",
+                color: "var(--text-secondary)",
+                marginBottom: "4px",
               }}
             >
-              <h4
-                style={{
-                  marginBottom: "10px",
-                }}
-              >
-                {review.studentName}
-              </h4>
+              Rating
+            </p>
 
-              <p
-                style={{
-                  marginBottom: "12px",
-                }}
-              >
-                {"⭐".repeat(review.rating)}
-              </p>
+            <strong>{alumni.rating} / 5</strong>
+          </div>
 
-              <p
-                style={{
-                  color: "var(--text-secondary)",
-                }}
-              >
-                {review.comment}
-              </p>
-            </div>
-          ))}
+          <div>
+            <p
+              style={{
+                color: "var(--text-secondary)",
+                marginBottom: "4px",
+              }}
+            >
+              Reviews
+            </p>
+
+            <strong>{alumni.totalReviews}</strong>
+          </div>
+
+          <div>
+            <p
+              style={{
+                color: "var(--text-secondary)",
+                marginBottom: "4px",
+              }}
+            >
+              Session Fee
+            </p>
+
+            <strong>₹{alumni.hourlyRate}</strong>
+          </div>
         </div>
-      </section>
+      </div>
     </main>
   );
 }

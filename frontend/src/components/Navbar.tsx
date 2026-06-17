@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function Navbar() {
   return (
@@ -57,7 +58,7 @@ export default function Navbar() {
 
           <Link href="/bookings">Bookings</Link>
 
-          <Link href="/profile/1">Profile</Link>
+          <Link href="/profile">Profile</Link>
         </div>
       </nav>
     </header>

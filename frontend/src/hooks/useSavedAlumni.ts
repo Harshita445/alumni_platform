@@ -6,9 +6,7 @@ export function useSavedAlumni() {
   const [savedIds, setSavedIds] = useState<string[]>([]);
 
   useEffect(() => {
-    const stored = localStorage.getItem(
-      "saved-alumni"
-    );
+    const stored = localStorage.getItem("saved-alumni");
 
     if (stored) {
       setSavedIds(JSON.parse(stored));
@@ -28,8 +26,7 @@ export function useSavedAlumni() {
     );
   };
 
-  const isSaved = (id: string) =>
-    savedIds.includes(id);
+  const isSaved = (id: string) => savedIds.includes(id);
 
   return {
     savedIds,

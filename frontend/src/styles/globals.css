@@ -1,0 +1,48 @@
+:root {
+  /* Backgrounds */
+  --background: #F7F3ED;
+  --surface: #FBF8F3;
+  --surface-secondary: #EFE5D8;
+
+  /* Text */
+  --text-primary: #2E211B;
+  --text-secondary: #6F5C4F;
+
+  /* Borders */
+  --border: #D8CABC;
+
+  /* Actions */
+  --primary: #6B4F3B;
+  --primary-hover: #5A4030;
+
+  /* Accent */
+  --accent: #A56A43;
+
+  /* States */
+  --success: #6C7A53;
+
+  /* Radius */
+  --radius-sm: 12px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
+
+  /* Shadows */
+  --shadow-sm: 0 2px 8px rgba(46, 33, 27, 0.06);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background-color: var(--background);
+  color: var(--text-primary);
+  font-family: Inter, sans-serif;
+}
+
+button,
+input {
+  font: inherit;
+}
