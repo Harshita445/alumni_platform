@@ -2,60 +2,74 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-
 import { uniqueCompanies } from "@/data/companies";
+import {
+  registerUser,
+  saveStoredUser,
+  updateProfile,
+} from "@/lib/api";
 
 export default function AlumniRegisterPage() {
   const router = useRouter();
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
-
+  const [password, setPassword] = useState("");
   const [graduationYear, setGraduationYear] =
     useState("");
-
   const [company, setCompany] = useState("");
-
-  const [role, setRole] = useState("");
-
+  const [designation, setDesignation] = useState("");
   const [linkedIn, setLinkedIn] = useState("");
-
   const [bio, setBio] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const verified = email.endsWith(
-    "@thapar.edu"
-  );
+  const handleSubmit = async () => {
+    setError(null);
 
-  const handleSubmit = () => {
-    const user = {
-      id: crypto.randomUUID(),
-      name,
-      email,
-      role: "alumni",
-      profileImage:
-        "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=400&q=80",
-    };
+    if (!name || !email || !password) {
+      setError("Name, email, and password are required.");
+      return;
+    }
 
-    localStorage.setItem(
-      "current-user",
-      JSON.stringify(user)
-    );
+    setIsSubmitting(true);
 
-    localStorage.setItem(
-      "alumni-profile",
-      JSON.stringify({
-        graduationYear,
-        company,
-        role,
-        linkedIn,
-        bio,
-        verificationStatus: verified
-          ? "verified"
-          : "pending",
-      })
-    );
+    try {
+      const storedUser = await registerUser({
+        email,
+        password,
+        role: "alumni",
+      });
 
-    router.push("/profile");
+      const profile = await updateProfile(
+        storedUser.access_token,
+        {
+          full_name: name,
+          graduation_year: graduationYear
+            ? Number(graduationYear)
+            : undefined,
+          company,
+          designation,
+          linkedin_url: linkedIn,
+          bio,
+        }
+      );
+
+      saveStoredUser({
+        ...storedUser,
+        profile,
+      });
+
+      router.push("/dashboard");
+    } catch (err: unknown) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Registration failed"
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -83,74 +97,74 @@ export default function AlumniRegisterPage() {
           style={inputStyle}
         />
 
-        {!verified && (
-          <>
-            <input
-              placeholder="Graduation year"
-              value={graduationYear}
-              onChange={(e) =>
-                setGraduationYear(
-                  e.target.value
-                )
-              }
-              style={inputStyle}
-            />
+        <input
+          placeholder="Graduation year"
+          value={graduationYear}
+          onChange={(e) =>
+            setGraduationYear(e.target.value)
+          }
+          style={inputStyle}
+        />
 
-            <select
-              value={company}
-              onChange={(e) =>
-                setCompany(e.target.value)
-              }
-              style={inputStyle}
-            >
-              <option value="">
-                Select company
-              </option>
+        <select
+          value={company}
+          onChange={(e) =>
+            setCompany(e.target.value)
+          }
+          style={inputStyle}
+        >
+          <option value="">
+            Select company
+          </option>
 
-              {uniqueCompanies.map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))}
-            </select>
+          {uniqueCompanies.map((c) => (
+            <option key={c} value={c}>
+              {c}
+            </option>
+          ))}
+        </select>
 
-            <input
-              placeholder="Role"
-              value={role}
-              onChange={(e) =>
-                setRole(e.target.value)
-              }
-              style={inputStyle}
-            />
+        <input
+          placeholder="Designation"
+          value={designation}
+          onChange={(e) =>
+            setDesignation(e.target.value)
+          }
+          style={inputStyle}
+        />
 
-            <input
-              placeholder="LinkedIn URL"
-              value={linkedIn}
-              onChange={(e) =>
-                setLinkedIn(e.target.value)
-              }
-              style={inputStyle}
-            />
+        <input
+          placeholder="LinkedIn URL"
+          value={linkedIn}
+          onChange={(e) =>
+            setLinkedIn(e.target.value)
+          }
+          style={inputStyle}
+        />
 
-            <textarea
-              placeholder="Bio"
-              value={bio}
-              onChange={(e) =>
-                setBio(e.target.value)
-              }
-              style={{
-                ...inputStyle,
-                minHeight: "120px",
-              }}
-            />
-          </>
-        )}
+        <textarea
+          placeholder="Bio"
+          value={bio}
+          onChange={(e) =>
+            setBio(e.target.value)
+          }
+          style={{
+            ...inputStyle,
+            minHeight: "120px",
+          }}
+        />
+
+        {error ? <p style={errorStyle}>{error}</p> : null}
 
         <button
           onClick={handleSubmit}
-          style={buttonStyle}
+          disabled={isSubmitting}
+          style={{
+            ...buttonStyle,
+            opacity: isSubmitting ? 0.7 : 1,
+          }}
         >
-          Create Account
+          {isSubmitting ? "Creating account..." : "Create Account"}
         </button>
       </div>
     </main>
@@ -187,4 +201,9 @@ const buttonStyle = {
   padding: "16px",
   borderRadius: "var(--radius-md)",
   cursor: "pointer",
+};
+
+const errorStyle = {
+  color: "var(--danger)",
+  margin: 0,
 };

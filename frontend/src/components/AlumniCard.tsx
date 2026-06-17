@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useSavedAlumni } from "@/hooks/useSavedAlumni";
 
 type Props = {
-  id: string;
+  id: number;
   name: string;
   profileImage: string;
   company: string;

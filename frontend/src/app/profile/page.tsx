@@ -18,14 +18,9 @@ export default function MyProfilePage() {
           textAlign: "center",
         }}
       >
-        <h1
-          style={{
-            marginBottom: "16px",
-          }}
-        >
+        <h1 style={{ marginBottom: "16px" }}>
           Please log in
         </h1>
-
         <p
           style={{
             color: "var(--text-secondary)",
@@ -34,7 +29,6 @@ export default function MyProfilePage() {
         >
           Sign in to access your profile.
         </p>
-
         <Link
           href="/login"
           style={{
@@ -50,6 +44,12 @@ export default function MyProfilePage() {
       </main>
     );
   }
+
+  const profile = user.profile || {};
+  const displayName = profile.full_name || user.email;
+  const profileImage =
+    profile.profile_image ||
+    "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&q=80";
 
   return (
     <main
@@ -78,11 +78,8 @@ export default function MyProfilePage() {
           }}
         >
           <Image
-            src={
-              user.profileImage ||
-              "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&q=80"
-            }
-            alt={user.name}
+            src={profileImage}
+            alt={displayName}
             width={120}
             height={120}
             style={{
@@ -93,14 +90,9 @@ export default function MyProfilePage() {
           />
 
           <div>
-            <h1
-              style={{
-                marginBottom: "8px",
-              }}
-            >
-              {user.name}
+            <h1 style={{ marginBottom: "8px" }}>
+              {displayName}
             </h1>
-
             <p
               style={{
                 color: "var(--text-secondary)",
@@ -109,12 +101,10 @@ export default function MyProfilePage() {
             >
               {user.email}
             </p>
-
             <span
               style={{
                 display: "inline-block",
-                background:
-                  "var(--surface-secondary)",
+                background: "var(--surface-secondary)",
                 padding: "8px 14px",
                 borderRadius: "999px",
                 textTransform: "capitalize",
@@ -125,52 +115,46 @@ export default function MyProfilePage() {
           </div>
         </div>
 
-        {user.role === "student" && (
-          <StudentSection />
-        )}
-
-        {user.role === "alumni" && (
-          <AlumniSection />
+        {user.role === "student" ? (
+          <StudentSection profile={profile} />
+        ) : (
+          <AlumniSection profile={profile} />
         )}
       </section>
     </main>
   );
 }
 
-function StudentSection() {
-  const profile =
-    typeof window !== "undefined"
-      ? JSON.parse(
-          localStorage.getItem(
-            "student-profile"
-          ) || "{}"
-        )
-      : {};
+type ProfileData = {
+  branch?: string;
+  graduation_year?: number;
+  target_companies?: string[];
+  desired_roles?: string[];
+  company?: string;
+  designation?: string;
+  linkedin_url?: string;
+};
 
-  const hasProfile =
-    Object.keys(profile).length > 0;
+function StudentSection({ profile }: { profile: ProfileData }) {
+  const hasProfile = Boolean(
+    profile.branch || profile.graduation_year ||
+      profile.target_companies || profile.desired_roles
+  );
 
   if (!hasProfile) {
     return (
       <div>
-        <h2
-          style={{
-            marginBottom: "16px",
-          }}
-        >
+        <h2 style={{ marginBottom: "16px" }}>
           Complete your profile
         </h2>
-
         <p
           style={{
             color: "var(--text-secondary)",
             marginBottom: "24px",
           }}
         >
-          Tell us about your goals so we can
-          recommend relevant alumni.
+          Tell us about your goals so we can recommend relevant alumni.
         </p>
-
         <Link
           href="/onboarding"
           style={{
@@ -198,26 +182,23 @@ function StudentSection() {
     >
       <InfoCard
         label="Department"
-        value={profile.department}
+        value={profile.branch || "Not specified"}
       />
-
       <InfoCard
         label="Graduation Year"
-        value={profile.graduationYear}
+        value={profile.graduation_year || "Not specified"}
       />
-
       <InfoCard
         label="Target Companies"
         value={
-          profile.targetCompanies?.join(", ") ||
+          profile.target_companies?.join(", ") ||
           "Not specified"
         }
       />
-
       <InfoCard
         label="Desired Roles"
         value={
-          profile.desiredRoles?.join(", ") ||
+          profile.desired_roles?.join(", ") ||
           "Not specified"
         }
       />
@@ -225,16 +206,7 @@ function StudentSection() {
   );
 }
 
-function AlumniSection() {
-  const profile =
-    typeof window !== "undefined"
-      ? JSON.parse(
-          localStorage.getItem(
-            "alumni-profile"
-          ) || "{}"
-        )
-      : {};
-
+function AlumniSection({ profile }: { profile: ProfileData }) {
   return (
     <div
       style={{
@@ -246,24 +218,31 @@ function AlumniSection() {
     >
       <InfoCard
         label="Company"
-        value={profile.company}
+        value={profile.company || "Not specified"}
       />
-
       <InfoCard
-        label="Role"
-        value={profile.role}
+        label="Designation"
+        value={profile.designation || "Not specified"}
       />
-
       <InfoCard
         label="Graduation Year"
-        value={profile.graduationYear}
+        value={profile.graduation_year || "Not specified"}
       />
-
       <InfoCard
-        label="Verification"
+        label="LinkedIn"
         value={
-          profile.verificationStatus ||
-          "Pending"
+          profile.linkedin_url ? (
+            <a
+              href={profile.linkedin_url}
+              target="_blank"
+              rel="noreferrer"
+              style={{ color: "var(--primary)" }}
+            >
+              View profile
+            </a>
+          ) : (
+            "Not specified"
+          )
         }
       />
     </div>
@@ -275,28 +254,28 @@ function InfoCard({
   value,
 }: {
   label: string;
-  value: string;
+  value: string | number | React.ReactNode;
 }) {
   return (
     <div
       style={{
-        background: "var(--background)",
+        background: "var(--surface)",
         border: "1px solid var(--border)",
-        borderRadius: "var(--radius-md)",
-        padding: "20px",
+        borderRadius: "var(--radius-lg)",
+        padding: "24px",
       }}
     >
       <p
         style={{
           color: "var(--text-secondary)",
-          fontSize: "14px",
-          marginBottom: "8px",
+          marginBottom: "10px",
         }}
       >
         {label}
       </p>
-
-      <p>{value || "Not specified"}</p>
+      <p style={{ fontSize: "16px", lineHeight: 1.6 }}>
+        {value}
+      </p>
     </div>
   );
 }

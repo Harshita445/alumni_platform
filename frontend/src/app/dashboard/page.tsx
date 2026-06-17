@@ -1,37 +1,114 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
-import { mockBookings } from "@/data/mockBookings";
-import { mockAlumni } from "@/data/mockAlumni";
+import { useAuth } from "@/hooks/useAuth";
+import { fetchDashboard } from "@/lib/api";
 
-import { getRecommendations } from "@/lib/recommendations";
+type RecentBooking = {
+  id: number;
+  name: string;
+  date: string;
+  time: string;
+  status: string;
+};
 
-import AlumniCard from "@/components/AlumniCard";
+type DashboardData = {
+  pending_requests: number;
+  upcoming_sessions: number;
+  completed_sessions: number;
+  saved_alumni?: number;
+  total_students_helped?: number;
+  recent_bookings: RecentBooking[];
+};
 
 export default function DashboardPage() {
-  const [recommendations, setRecommendations] =
-    useState<typeof mockAlumni>([]);
+  const router = useRouter();
+  const { user } = useAuth();
+  const [dashboard, setDashboard] = useState<DashboardData | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const profile = JSON.parse(
-      localStorage.getItem("student-profile") || "{}"
+    if (!user) {
+      return;
+    }
+
+    let active = true;
+
+    const loadDashboard = async () => {
+      setLoading(true);
+      setError(null);
+
+      try {
+        const result = await fetchDashboard(
+          user.access_token,
+          user.role
+        );
+
+        if (active) {
+          setDashboard(result);
+        }
+      } catch (err: unknown) {
+        if (active) {
+          setError(
+            err instanceof Error
+              ? err.message
+              : "Unable to load dashboard."
+          );
+        }
+      } finally {
+        if (active) {
+          setLoading(false);
+        }
+      }
+    };
+
+    loadDashboard();
+
+    return () => {
+      active = false;
+    };
+  }, [user]);
+
+  if (!user) {
+    return (
+      <main
+        style={{
+          maxWidth: "600px",
+          margin: "80px auto",
+          padding: "40px 24px",
+          textAlign: "center",
+        }}
+      >
+        <h1 style={{ marginBottom: "16px" }}>
+          Please log in to view your dashboard
+        </h1>
+        <p
+          style={{
+            color: "var(--text-secondary)",
+            marginBottom: "24px",
+          }}
+        >
+          Your personalized session summary is available after login.
+        </p>
+        <button
+          onClick={() => router.push("/login")}
+          style={{
+            background: "var(--primary)",
+            color: "#fff",
+            border: "none",
+            padding: "14px 24px",
+            borderRadius: "var(--radius-md)",
+            cursor: "pointer",
+          }}
+        >
+          Go to Login
+        </button>
+      </main>
     );
-
-    const recommendedAlumni = getRecommendations(
-      profile.targetCompanies || []
-    );
-
-    setRecommendations(recommendedAlumni);
-  }, []);
-
-  const upcomingSessions = mockBookings.filter(
-    (booking) => booking.status === "upcoming"
-  );
-
-  const completedSessions = mockBookings.filter(
-    (booking) => booking.status === "completed"
-  );
+  }
 
   return (
     <main
@@ -41,11 +118,7 @@ export default function DashboardPage() {
         padding: "48px 24px 80px",
       }}
     >
-      <div
-        style={{
-          marginBottom: "48px",
-        }}
-      >
+      <div style={{ marginBottom: "48px" }}>
         <p
           style={{
             color: "var(--accent)",
@@ -55,7 +128,6 @@ export default function DashboardPage() {
         >
           Welcome back
         </p>
-
         <h1
           style={{
             fontSize: "clamp(40px, 6vw, 64px)",
@@ -64,7 +136,6 @@ export default function DashboardPage() {
         >
           Your Dashboard
         </h1>
-
         <p
           style={{
             color: "var(--text-secondary)",
@@ -72,259 +143,168 @@ export default function DashboardPage() {
             lineHeight: 1.7,
           }}
         >
-          Manage your upcoming mentorship sessions,
-          track your progress, and continue building
-          meaningful alumni connections.
+          Manage your mentorship sessions, requests, and alumni connections.
         </p>
       </div>
 
-      <section
-        style={{
-          display: "grid",
-          gridTemplateColumns:
-            "repeat(auto-fit, minmax(240px, 1fr))",
-          gap: "20px",
-          marginBottom: "56px",
-        }}
-      >
+      {loading ? (
+        <div style={{ color: "var(--text-secondary)" }}>
+          Loading dashboard...
+        </div>
+      ) : error ? (
         <div
           style={{
             background: "var(--surface)",
             border: "1px solid var(--border)",
             borderRadius: "var(--radius-lg)",
-            padding: "28px",
-            boxShadow: "var(--shadow-sm)",
+            padding: "24px",
+            color: "var(--danger)",
           }}
         >
-          <p
-            style={{
-              color: "var(--text-secondary)",
-              marginBottom: "12px",
-            }}
-          >
-            Upcoming Sessions
-          </p>
-
-          <h2
-            style={{
-              fontSize: "40px",
-            }}
-          >
-            {upcomingSessions.length}
-          </h2>
+          {error}
         </div>
-
-        <div
-          style={{
-            background: "var(--surface)",
-            border: "1px solid var(--border)",
-            borderRadius: "var(--radius-lg)",
-            padding: "28px",
-            boxShadow: "var(--shadow-sm)",
-          }}
-        >
-          <p
+      ) : dashboard ? (
+        <>
+          <section
             style={{
-              color: "var(--text-secondary)",
-              marginBottom: "12px",
+              display: "grid",
+              gridTemplateColumns:
+                "repeat(auto-fit, minmax(240px, 1fr))",
+              gap: "20px",
+              marginBottom: "56px",
             }}
           >
-            Completed Sessions
-          </p>
-
-          <h2
-            style={{
-              fontSize: "40px",
-            }}
-          >
-            {completedSessions.length}
-          </h2>
-        </div>
-
-        <div
-          style={{
-            background: "var(--surface)",
-            border: "1px solid var(--border)",
-            borderRadius: "var(--radius-lg)",
-            padding: "28px",
-            boxShadow: "var(--shadow-sm)",
-          }}
-        >
-          <p
-            style={{
-              color: "var(--text-secondary)",
-              marginBottom: "12px",
-            }}
-          >
-            Alumni Network
-          </p>
-
-          <h2
-            style={{
-              fontSize: "40px",
-            }}
-          >
-            {mockAlumni.length}
-          </h2>
-        </div>
-      </section>
-
-      <section
-        style={{
-          marginBottom: "56px",
-        }}
-      >
-        <h2
-          style={{
-            marginBottom: "24px",
-          }}
-        >
-          Recommended Mentors
-        </h2>
-
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            gap: "16px",
-          }}
-        >
-          {recommendations.length > 0 ? (
-            recommendations.map((alumni) => (
-              <AlumniCard
-                key={alumni.id}
-                id={alumni.id}
-                name={alumni.name}
-                profileImage={alumni.profileImage}
-                company={alumni.company}
-                role={alumni.role}
+            <StatCard
+              label="Pending Requests"
+              value={dashboard.pending_requests}
+            />
+            <StatCard
+              label="Upcoming Sessions"
+              value={dashboard.upcoming_sessions}
+            />
+            <StatCard
+              label="Completed Sessions"
+              value={dashboard.completed_sessions}
+            />
+            {user.role === "student" ? (
+              <StatCard
+                label="Saved Alumni"
+                value={dashboard.saved_alumni ?? 0}
               />
-            ))
-          ) : (
+            ) : (
+              <StatCard
+                label="Students Helped"
+                value={dashboard.total_students_helped ?? 0}
+              />
+            )}
+          </section>
+
+          <section>
             <div
               style={{
-                background: "var(--surface)",
-                border: "1px solid var(--border)",
-                borderRadius: "var(--radius-lg)",
-                padding: "24px",
-                color: "var(--text-secondary)",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: "24px",
               }}
             >
-              Add your target companies in onboarding to
-              receive personalized mentor recommendations.
+              <h2>Recent Bookings</h2>
             </div>
-          )}
-        </div>
-      </section>
 
-      <section>
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            marginBottom: "24px",
-          }}
-        >
-          <h2>Upcoming Sessions</h2>
-        </div>
-
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            gap: "20px",
-          }}
-        >
-          {upcomingSessions.map((booking) => {
-            const alumni = mockAlumni.find(
-              (person) => person.id === booking.alumniId
-            );
-
-            return (
+            {dashboard.recent_bookings.length === 0 ? (
               <div
-                key={booking.id}
                 style={{
                   background: "var(--surface)",
                   border: "1px solid var(--border)",
                   borderRadius: "var(--radius-lg)",
-                  padding: "28px",
-                  boxShadow: "var(--shadow-sm)",
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  gap: "24px",
-                  flexWrap: "wrap",
+                  padding: "24px",
+                  color: "var(--text-secondary)",
                 }}
               >
-                <div>
-                  <p
-                    style={{
-                      color: "var(--accent)",
-                      marginBottom: "10px",
-                    }}
-                  >
-                    {booking.sessionType}
-                  </p>
-
-                  <h3
-                    style={{
-                      marginBottom: "8px",
-                    }}
-                  >
-                    {alumni?.name}
-                  </h3>
-
-                  <p
-                    style={{
-                      color: "var(--text-secondary)",
-                    }}
-                  >
-                    {alumni?.role} · {alumni?.company}
-                  </p>
-                </div>
-
-                <div
-                  style={{
-                    textAlign: "right",
-                  }}
-                >
-                  <p
-                    style={{
-                      marginBottom: "8px",
-                    }}
-                  >
-                    {booking.date}
-                  </p>
-
-                  <p
-                    style={{
-                      color: "var(--text-secondary)",
-                      marginBottom: "12px",
-                    }}
-                  >
-                    {booking.time}
-                  </p>
-
-                  <span
-                    style={{
-                      display: "inline-block",
-                      background:
-                        "var(--surface-secondary)",
-                      color: "var(--text-primary)",
-                      padding: "8px 14px",
-                      borderRadius: "999px",
-                      fontSize: "14px",
-                    }}
-                  >
-                    Upcoming
-                  </span>
-                </div>
+                No recent bookings yet.
               </div>
-            );
-          })}
-        </div>
-      </section>
+            ) : (
+              <div
+                style={{
+                  display: "grid",
+                  gap: "20px",
+                }}
+              >
+                {dashboard.recent_bookings.map((booking) => (
+                  <div
+                    key={booking.id}
+                    style={{
+                      background: "var(--surface)",
+                      border: "1px solid var(--border)",
+                      borderRadius: "var(--radius-lg)",
+                      padding: "24px",
+                      boxShadow: "var(--shadow-sm)",
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        flexWrap: "wrap",
+                        gap: "16px",
+                      }}
+                    >
+                      <div>
+                        <h3>{booking.name}</h3>
+                        <p
+                          style={{
+                            color: "var(--text-secondary)",
+                          }}
+                        >
+                          {booking.date} · {booking.time}
+                        </p>
+                      </div>
+                      <span
+                        style={{
+                          textTransform: "capitalize",
+                          color: "var(--accent)",
+                        }}
+                      >
+                        {booking.status}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+        </>
+      ) : null}
     </main>
+  );
+}
+
+function StatCard({
+  label,
+  value,
+}: {
+  label: string;
+  value: number;
+}) {
+  return (
+    <div
+      style={{
+        background: "var(--surface)",
+        border: "1px solid var(--border)",
+        borderRadius: "var(--radius-lg)",
+        padding: "28px",
+        boxShadow: "var(--shadow-sm)",
+      }}
+    >
+      <p
+        style={{
+          color: "var(--text-secondary)",
+          marginBottom: "12px",
+        }}
+      >
+        {label}
+      </p>
+      <h2 style={{ fontSize: "40px" }}>{value}</h2>
+    </div>
   );
 }

@@ -2,17 +2,63 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { mockAlumni } from "@/data/mockAlumni";
 
-export default function BookingPage() {
+type BookingData = {
+  id: number;
+  alumni_id: number;
+  student_id: number;
+  session_type: string;
+  date: string;
+  time: string;
+  status: string;
+};
+
+export default function BookingConfirmationPage() {
   const router = useRouter();
+  const [booking] = useState<BookingData | null>(
+    () => {
+      if (typeof window === "undefined") {
+        return null;
+      }
 
-  const [sessionType, setSessionType] = useState(
-    "Resume Review"
+      const stored = localStorage.getItem(
+        "latest-booking"
+      );
+
+      if (!stored) {
+        return null;
+      }
+
+      try {
+        return JSON.parse(stored) as BookingData;
+      } catch {
+        return null;
+      }
+    }
   );
 
-  const [date, setDate] = useState("");
+  if (!booking) {
+    return (
+      <main
+        style={{
+          maxWidth: "700px",
+          margin: "0 auto",
+          padding: "48px 24px 80px",
+        }}
+      >
+        <h1>Booking not found</h1>
+        <p>
+          It looks like there isn’t any booking data saved.
+          Please try booking again.
+        </p>
+      </main>
+    );
+  }
 
-  const [time, setTime] = useState("");
+  const alumni = mockAlumni.find(
+    (person) => person.id === String(booking.alumni_id)
+  );
 
   return (
     <main
@@ -33,7 +79,7 @@ export default function BookingPage() {
             marginBottom: "12px",
           }}
         >
-          Book a Session
+          Booking Confirmed
         </h1>
 
         <p
@@ -41,8 +87,7 @@ export default function BookingPage() {
             color: "var(--text-secondary)",
           }}
         >
-          Schedule time with an alumnus for guidance,
-          networking, or interview preparation.
+          Your session has been booked successfully.
         </p>
       </div>
 
@@ -53,114 +98,53 @@ export default function BookingPage() {
           borderRadius: "var(--radius-lg)",
           padding: "32px",
           boxShadow: "var(--shadow-sm)",
-          display: "flex",
-          flexDirection: "column",
-          gap: "24px",
+          display: "grid",
+          gap: "18px",
         }}
       >
         <div>
-          <label style={labelStyle}>
-            Session Type
-          </label>
-
-          <select
-            value={sessionType}
-            onChange={(e) =>
-              setSessionType(e.target.value)
-            }
-            style={inputStyle}
-          >
-            <option>Resume Review</option>
-            <option>Mock Interview</option>
-            <option>Career Guidance</option>
-            <option>Networking Chat</option>
-          </select>
+          <strong>Alumnus</strong>
+          <p>{alumni?.name ?? `ID ${booking.alumni_id}`}</p>
         </div>
 
         <div>
-          <label style={labelStyle}>
-            Select Date
-          </label>
-
-          <input
-            type="date"
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-            style={inputStyle}
-          />
+          <strong>Session Type</strong>
+          <p>{booking.session_type}</p>
         </div>
 
         <div>
-          <label style={labelStyle}>
-            Select Time
-          </label>
+          <strong>Date</strong>
+          <p>{booking.date}</p>
+        </div>
 
-          <input
-            type="time"
-            value={time}
-            onChange={(e) => setTime(e.target.value)}
-            style={inputStyle}
-          />
+        <div>
+          <strong>Time</strong>
+          <p>{booking.time}</p>
+        </div>
+
+        <div>
+          <strong>Status</strong>
+          <p>{booking.status}</p>
         </div>
 
         <button
-          disabled={!date || !time}
-          onClick={() =>
-            router.push("/bookings/confirmation")
-          }
+          onClick={() => router.push("/dashboard")}
           style={{
-            background:
-              !date || !time
-                ? "var(--border)"
-                : "var(--primary)",
-
+            marginTop: "16px",
+            width: "fit-content",
+            background: "var(--primary)",
             color: "#fff",
-
             border: "none",
-
             borderRadius: "var(--radius-md)",
-
-            padding: "16px",
-
-            cursor:
-              !date || !time
-                ? "not-allowed"
-                : "pointer",
-
-            fontSize: "16px",
-
+            padding: "14px 22px",
+            cursor: "pointer",
+            fontSize: "15px",
             fontWeight: 600,
-
-            transition: "0.2s ease",
           }}
         >
-          Confirm Booking
+          Return to Dashboard
         </button>
       </div>
     </main>
   );
 }
-
-const labelStyle = {
-  display: "block",
-  marginBottom: "8px",
-  color: "var(--text-secondary)",
-  fontSize: "14px",
-};
-
-const inputStyle = {
-  width: "100%",
-  padding: "14px 16px",
-
-  borderRadius: "var(--radius-md)",
-
-  border: "1px solid var(--border)",
-
-  background: "var(--background)",
-
-  color: "var(--text-primary)",
-
-  fontSize: "15px",
-
-  outline: "none",
-};

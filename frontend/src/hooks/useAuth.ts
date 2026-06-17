@@ -2,32 +2,39 @@
 
 import { useEffect, useState } from "react";
 
+import {
+  clearStoredUser,
+  getStoredUser,
+  saveStoredUser,
+  StoredUser,
+} from "@/lib/api";
+
 export function useAuth() {
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<StoredUser | null>(
+    () => getStoredUser()
+  );
 
   useEffect(() => {
-    const storedUser =
-      localStorage.getItem("current-user");
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key === "current-user") {
+        setUser(getStoredUser());
+      }
+    };
 
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
-    }
+    window.addEventListener("storage", handleStorage);
+
+    return () => {
+      window.removeEventListener("storage", handleStorage);
+    };
   }, []);
 
-  function login(data: any) {
-    localStorage.setItem(
-      "current-user",
-      JSON.stringify(data)
-    );
-
+  function login(data: StoredUser) {
+    saveStoredUser(data);
     setUser(data);
   }
 
   function logout() {
-    localStorage.removeItem(
-      "current-user"
-    );
-
+    clearStoredUser();
     setUser(null);
   }
 

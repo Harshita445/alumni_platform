@@ -6,71 +6,69 @@ import { useRouter } from "next/navigation";
 import {
   getAdmissionYear,
   getGraduationYear,
-  isValidStudentEmail,
-} from "@/lib/studentEmail";
+  isThaparStudentEmail,
+} from "@/lib/auth";
+import { registerUser } from "@/lib/api";
 
 export default function StudentRegisterPage() {
   const router = useRouter();
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
-
-  const [admissionYear, setAdmissionYear] =
-    useState<number | null>(null);
-
   const [graduationYear, setGraduationYear] =
     useState("");
-
   const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const admissionYear = getAdmissionYear(email);
 
   useEffect(() => {
-    if (!isValidStudentEmail(email)) {
-      setAdmissionYear(null);
+    if (!isThaparStudentEmail(email)) {
       setGraduationYear("");
       return;
     }
 
     const year = getAdmissionYear(email);
 
-    if (!year) return;
-
-    setAdmissionYear(year);
-
-    setGraduationYear(
-      String(getGraduationYear(year))
-    );
-  }, [email]);
-
-  const handleSubmit = () => {
-    if (!isValidStudentEmail(email)) {
-      alert("Enter a valid Thapar email.");
+    if (!year) {
       return;
     }
 
-    const user = {
-      id: crypto.randomUUID(),
-      name,
-      email,
-      role: "student",
-      admissionYear,
-      graduationYear,
-      profileImage:
-        "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&q=80",
-    };
+    setGraduationYear(String(getGraduationYear(year)));
+  }, [email]);
 
-    localStorage.setItem(
-      "current-user",
-      JSON.stringify(user)
-    );
+  const handleSubmit = async () => {
+    setError(null);
 
-    localStorage.setItem(
-      "student-profile",
-      JSON.stringify({
-        graduationYear,
-      })
-    );
+    if (!isThaparStudentEmail(email)) {
+      setError("Enter a valid Thapar student email.");
+      return;
+    }
 
-    router.push("/onboarding");
+    if (!name || !password) {
+      setError("Name and password are required.");
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      await registerUser({
+        email,
+        password,
+        role: "student",
+      });
+      router.push("/dashboard");
+    } catch (err: unknown) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Registration failed"
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -100,7 +98,7 @@ export default function StudentRegisterPage() {
 
         <input
           placeholder="Admission year"
-          value={admissionYear ?? ""}
+          value={admissionYear ? String(admissionYear) : ""}
           readOnly
           style={inputStyle}
         />
@@ -124,11 +122,17 @@ export default function StudentRegisterPage() {
           style={inputStyle}
         />
 
+        {error ? <p style={errorStyle}>{error}</p> : null}
+
         <button
           onClick={handleSubmit}
-          style={buttonStyle}
+          disabled={isSubmitting}
+          style={{
+            ...buttonStyle,
+            opacity: isSubmitting ? 0.7 : 1,
+          }}
         >
-          Continue
+          {isSubmitting ? "Registering..." : "Continue"}
         </button>
       </div>
     </main>
@@ -165,4 +169,9 @@ const buttonStyle = {
   padding: "16px",
   borderRadius: "var(--radius-md)",
   cursor: "pointer",
+};
+
+const errorStyle = {
+  color: "var(--danger)",
+  margin: 0,
 };

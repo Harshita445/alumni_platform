@@ -1,7 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+
+import { useAuth } from "@/hooks/useAuth";
+import { createBooking, fetchAlumni } from "@/lib/api";
 
 const labelStyle = {
   display: "block",
@@ -23,13 +26,150 @@ const inputStyle = {
 
 export default function BookingPage() {
   const router = useRouter();
+  const { user } = useAuth();
 
+  const [alumni, setAlumni] = useState<
+    Array<{
+      id: number;
+      full_name?: string;
+      company?: string;
+      designation?: string;
+    }>
+  >([]);
+  const [alumniId, setAlumniId] = useState("");
   const [sessionType, setSessionType] =
     useState("Resume Review");
-
   const [date, setDate] = useState("");
-
   const [time, setTime] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!user) {
+      return;
+    }
+
+    setLoading(true);
+    fetchAlumni(user.access_token)
+      .then((result) => {
+        setAlumni(result);
+        if (result.length > 0) {
+          setAlumniId(String(result[0].id));
+        }
+      })
+      .catch((err: unknown) => {
+        setError(
+          err instanceof Error
+            ? err.message
+            : "Unable to load alumni."
+        );
+      })
+      .finally(() => setLoading(false));
+  }, [user]);
+
+  const handleConfirm = async () => {
+    if (!alumniId || !date || !time) {
+      setError("Please complete all booking fields.");
+      return;
+    }
+
+    if (!user) {
+      setError("Please log in to book a session.");
+      return;
+    }
+
+    setError(null);
+    setIsSubmitting(true);
+
+    try {
+      const booking = await createBooking(user.access_token, {
+        alumni_id: Number(alumniId),
+        session_type: sessionType,
+        date,
+        time,
+      });
+
+      localStorage.setItem(
+        "latest-booking",
+        JSON.stringify(booking)
+      );
+      router.push("/bookings/confirmation");
+    } catch (err: unknown) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "An unexpected error occurred."
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  if (!user) {
+    return (
+      <main
+        style={{
+          maxWidth: "600px",
+          margin: "80px auto",
+          padding: "40px 24px",
+          textAlign: "center",
+        }}
+      >
+        <h1 style={{ marginBottom: "16px" }}>
+          Log in to book a session
+        </h1>
+
+        <p
+          style={{
+            color: "var(--text-secondary)",
+            marginBottom: "24px",
+          }}
+        >
+          You need an account to request a mentorship session.
+        </p>
+
+        <button
+          onClick={() => router.push("/login")}
+          style={{
+            background: "var(--primary)",
+            color: "#fff",
+            border: "none",
+            padding: "14px 24px",
+            borderRadius: "var(--radius-md)",
+            cursor: "pointer",
+          }}
+        >
+          Go to Login
+        </button>
+      </main>
+    );
+  }
+
+  if (user.role !== "student") {
+    return (
+      <main
+        style={{
+          maxWidth: "600px",
+          margin: "80px auto",
+          padding: "40px 24px",
+          textAlign: "center",
+        }}
+      >
+        <h1 style={{ marginBottom: "16px" }}>
+          Alumni cannot book sessions
+        </h1>
+
+        <p
+          style={{
+            color: "var(--text-secondary)",
+          }}
+        >
+          Only students can request mentorship sessions.
+        </p>
+      </main>
+    );
+  }
 
   return (
     <main
@@ -75,6 +215,33 @@ export default function BookingPage() {
           gap: "24px",
         }}
       >
+        {loading ? (
+          <p>Loading available alumni…</p>
+        ) : null}
+
+        <div>
+          <label style={labelStyle}>
+            Choose an Alumnus
+          </label>
+
+          <select
+            value={alumniId}
+            onChange={(e) =>
+              setAlumniId(e.target.value)
+            }
+            style={inputStyle}
+          >
+            {alumni.map((alumnus) => (
+              <option
+                key={alumnus.id}
+                value={alumnus.id}
+              >
+                {alumnus.full_name || "Alumnus"} — {alumnus.company}
+              </option>
+            ))}
+          </select>
+        </div>
+
         <div>
           <label style={labelStyle}>
             Session Type
@@ -120,14 +287,25 @@ export default function BookingPage() {
           />
         </div>
 
+        {error ? (
+          <p
+            style={{
+              color: "var(--danger)",
+              margin: 0,
+            }}
+          >
+            {error}
+          </p>
+        ) : null}
+
         <button
-          disabled={!date || !time}
-          onClick={() =>
-            router.push("/bookings/confirmation")
+          disabled={
+            !alumniId || !date || !time || isSubmitting
           }
+          onClick={handleConfirm}
           style={{
             background:
-              !date || !time
+              !alumniId || !date || !time || isSubmitting
                 ? "var(--border)"
                 : "var(--primary)",
             color: "#fff",
@@ -135,14 +313,14 @@ export default function BookingPage() {
             borderRadius: "var(--radius-md)",
             padding: "16px",
             cursor:
-              !date || !time
+              !alumniId || !date || !time || isSubmitting
                 ? "not-allowed"
                 : "pointer",
             fontSize: "16px",
             fontWeight: 600,
           }}
         >
-          Confirm Booking
+          {isSubmitting ? "Booking..." : "Confirm Booking"}
         </button>
       </div>
     </main>

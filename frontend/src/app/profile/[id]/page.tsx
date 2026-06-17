@@ -1,26 +1,32 @@
 import Image from "next/image";
 import { notFound } from "next/navigation";
 
-import { mockAlumni } from "@/data/mockAlumni";
+const API_BASE =
+  process.env.NEXT_PUBLIC_API_URL ||
+  "http://localhost:8000";
 
 type ProfilePageProps = {
-  params: Promise<{
+  params: {
     id: string;
-  }>;
+  };
 };
 
 export default async function ProfilePage({
   params,
 }: ProfilePageProps) {
-  const { id } = await params;
-
-  const alumni = mockAlumni.find(
-    (person) => person.id === id
+  const { id } = params;
+  const response = await fetch(
+    `${API_BASE}/alumni/${id}`,
+    {
+      cache: "no-store",
+    }
   );
 
-  if (!alumni) {
+  if (!response.ok) {
     notFound();
   }
+
+  const alumni = await response.json();
 
   return (
     <main
@@ -40,8 +46,11 @@ export default async function ProfilePage({
         }}
       >
         <Image
-          src={alumni.profileImage}
-          alt={alumni.name}
+          src={
+            alumni.profile_image ||
+            "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&q=80"
+          }
+          alt={alumni.full_name}
           width={120}
           height={120}
           style={{
@@ -51,12 +60,8 @@ export default async function ProfilePage({
           }}
         />
 
-        <h1
-          style={{
-            marginBottom: "12px",
-          }}
-        >
-          {alumni.name}
+        <h1 style={{ marginBottom: "12px" }}>
+          {alumni.full_name}
         </h1>
 
         <p
@@ -65,7 +70,7 @@ export default async function ProfilePage({
             marginBottom: "8px",
           }}
         >
-          {alumni.role} · {alumni.company}
+          {alumni.designation} · {alumni.company}
         </p>
 
         <p
@@ -74,7 +79,7 @@ export default async function ProfilePage({
             marginBottom: "32px",
           }}
         >
-          Class of {alumni.graduationYear}
+          Class of {alumni.graduation_year || "N/A"}
         </p>
 
         <p
@@ -83,32 +88,8 @@ export default async function ProfilePage({
             marginBottom: "32px",
           }}
         >
-          {alumni.bio}
+          {alumni.bio || "No bio provided."}
         </p>
-
-        <div
-          style={{
-            display: "flex",
-            gap: "12px",
-            flexWrap: "wrap",
-            marginBottom: "32px",
-          }}
-        >
-          {alumni.sessionTypes.map((session) => (
-            <span
-              key={session}
-              style={{
-                padding: "8px 14px",
-                borderRadius: "999px",
-                background:
-                  "var(--surface-secondary)",
-                fontSize: "14px",
-              }}
-            >
-              {session}
-            </span>
-          ))}
-        </div>
 
         <div
           style={{
@@ -124,10 +105,9 @@ export default async function ProfilePage({
                 marginBottom: "4px",
               }}
             >
-              Rating
+              Branch
             </p>
-
-            <strong>{alumni.rating} / 5</strong>
+            <strong>{alumni.branch || "Not specified"}</strong>
           </div>
 
           <div>
@@ -137,23 +117,20 @@ export default async function ProfilePage({
                 marginBottom: "4px",
               }}
             >
-              Reviews
+              LinkedIn
             </p>
-
-            <strong>{alumni.totalReviews}</strong>
-          </div>
-
-          <div>
-            <p
-              style={{
-                color: "var(--text-secondary)",
-                marginBottom: "4px",
-              }}
-            >
-              Session Fee
-            </p>
-
-            <strong>₹{alumni.hourlyRate}</strong>
+            {alumni.linkedin_url ? (
+              <a
+                href={alumni.linkedin_url}
+                target="_blank"
+                rel="noreferrer"
+                style={{ color: "var(--primary)" }}
+              >
+                View profile
+              </a>
+            ) : (
+              <span>Not specified</span>
+            )}
           </div>
         </div>
       </div>

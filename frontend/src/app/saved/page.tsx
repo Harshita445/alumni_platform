@@ -1,15 +1,10 @@
 "use client";
 
 import AlumniCard from "@/components/AlumniCard";
-import { mockAlumni } from "@/data/mockAlumni";
 import { useSavedAlumni } from "@/hooks/useSavedAlumni";
 
 export default function SavedPage() {
-  const { savedIds } = useSavedAlumni();
-
-  const savedAlumni = mockAlumni.filter((alumni) =>
-    savedIds.includes(alumni.id)
-  );
+  const { savedAlumni, loading, error } = useSavedAlumni();
 
   return (
     <main
@@ -28,7 +23,43 @@ export default function SavedPage() {
         Saved Alumni
       </h1>
 
-      {savedAlumni.length === 0 ? (
+      {loading ? (
+        <div
+          style={{
+            padding: "24px",
+            color: "var(--text-secondary)",
+          }}
+        >
+          Loading saved alumni...
+        </div>
+      ) : error ? (
+        <div
+          style={{
+            background: "var(--surface)",
+            border: "1px solid var(--border)",
+            borderRadius: "var(--radius-lg)",
+            padding: "48px",
+            textAlign: "center",
+            color: "var(--danger)",
+          }}
+        >
+          <h3
+            style={{
+              marginBottom: "12px",
+            }}
+          >
+            Could not load saved alumni
+          </h3>
+
+          <p
+            style={{
+              color: "var(--text-secondary)",
+            }}
+          >
+            {error}
+          </p>
+        </div>
+      ) : savedAlumni.length === 0 ? (
         <div
           style={{
             background: "var(--surface)",
@@ -66,10 +97,10 @@ export default function SavedPage() {
             <AlumniCard
               key={alumni.id}
               id={alumni.id}
-              name={alumni.name}
-              profileImage={alumni.profileImage}
-              company={alumni.company}
-              role={alumni.role}
+              name={alumni.full_name ?? "Unknown"}
+              profileImage={alumni.profile_image ?? "/default-avatar.png"}
+              company={alumni.company ?? "Independent"}
+              role={alumni.designation ?? "Alumni"}
             />
           ))}
         </div>
