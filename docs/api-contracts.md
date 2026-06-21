@@ -1,611 +1,36 @@
 # API Contracts
 
+Last audited: 2026-06-21.
+
+The active backend is a FastAPI app in `backend/app/main.py`. Routes are mounted directly on the app. There is currently no `/api/v1` prefix.
+
 ## Base URL
 
-### Local Development
+Local frontend default:
 
 ```text
-http://localhost:8000/api/v1
+http://localhost:8000
 ```
 
-### Production
+Frontend override:
 
 ```text
-https://api.yourdomain.com/api/v1
+NEXT_PUBLIC_API_URL
 ```
-
 
 ## Authentication
 
-Authentication uses JWT access tokens stored in HTTP-only cookies.
+Current implementation uses JWT bearer tokens.
 
-Protected routes require authentication.
+- Tokens are returned from `/auth/register` and `/auth/login`.
+- Protected requests require `Authorization: Bearer <access_token>`.
+- The frontend stores token data in localStorage under `current-user`.
+- The backend does not currently use HTTP-only cookies.
+- The backend does not currently enforce email verification.
 
-User roles:
+## Common Error Shape
 
-* `student`
-* `alumni`
-* `admin`
-
----
-
-# Health Check
-
-## GET /
-
-### Description
-
-Verify that the API is running.
-
-### Response
-
-```json
-{
-  "message": "API running"
-}
-```
-
----
-
-# Authentication Endpoints
-
-## POST /auth/register
-
-### Description
-
-Register a new user.
-
-### Request Body
-
-```json
-{
-  "full_name": "John Doe",
-  "email": "john@iitd.ac.in",
-  "password": "StrongPassword123!",
-  "role": "student",
-  "college_id": 1,
-  "graduation_year": 2027
-}
-```
-
-### Validation Rules
-
-* `full_name`: required
-* `email`: required, valid email
-* `password`: minimum 8 characters
-* `role`: student or alumni
-* `college_id`: required
-* `graduation_year`: required
-
-### Success Response
-
-**201 Created**
-
-```json
-{
-  "message": "Registration successful. Please verify your email."
-}
-```
-
-### Error Responses
-
-**400 Bad Request**
-
-```json
-{
-  "detail": "Invalid request data"
-}
-```
-
-**409 Conflict**
-
-```json
-{
-  "detail": "Email already registered"
-}
-```
-
----
-
-## POST /auth/login
-
-### Description
-
-Authenticate a user.
-
-### Request Body
-
-```json
-{
-  "email": "john@iitd.ac.in",
-  "password": "StrongPassword123!"
-}
-```
-
-### Success Response
-
-**200 OK**
-
-```json
-{
-  "user": {
-    "id": 1,
-    "full_name": "John Doe",
-    "email": "john@iitd.ac.in",
-    "role": "student",
-    "is_verified": true
-  }
-}
-```
-
-### Error Responses
-
-**401 Unauthorized**
-
-```json
-{
-  "detail": "Invalid credentials"
-}
-```
-
-**403 Forbidden**
-
-```json
-{
-  "detail": "Email not verified"
-}
-```
-
----
-
-## POST /auth/logout
-
-### Description
-
-Log out the current user.
-
-### Success Response
-
-**200 OK**
-
-```json
-{
-  "message": "Logged out successfully"
-}
-```
-
----
-
-## POST /auth/verify-email
-
-### Description
-
-Verify user email using a verification token.
-
-### Request Body
-
-```json
-{
-  "token": "verification_token"
-}
-```
-
-### Success Response
-
-**200 OK**
-
-```json
-{
-  "message": "Email verified successfully"
-}
-```
-
-### Error Responses
-
-**400 Bad Request**
-
-```json
-{
-  "detail": "Invalid or expired token"
-}
-```
-
----
-
-## GET /users/me
-
-### Description
-
-Return the currently authenticated user.
-
-### Success Response
-
-**200 OK**
-
-```json
-{
-  "id": 1,
-  "full_name": "John Doe",
-  "email": "john@iitd.ac.in",
-  "role": "student",
-  "is_verified": true,
-  "college": {
-    "id": 1,
-    "name": "IIT Delhi"
-  }
-}
-```
-
-### Error Responses
-
-**401 Unauthorized**
-
-```json
-{
-  "detail": "Not authenticated"
-}
-```
-
----
-
-# College Endpoints
-
-## GET /colleges
-
-### Description
-
-Return all colleges.
-
-### Success Response
-
-**200 OK**
-
-```json
-[
-  {
-    "id": 1,
-    "name": "IIT Delhi",
-    "domain": "iitd.ac.in"
-  },
-  {
-    "id": 2,
-    "name": "Stanford University",
-    "domain": "stanford.edu"
-  }
-]
-```
-
----
-
-# Alumni Endpoints
-
-## GET /alumni
-
-### Description
-
-Return a paginated list of alumni.
-
-### Query Parameters
-
-| Parameter    | Type    | Example         |
-| ------------ | ------- | --------------- |
-| college_id   | integer | 1               |
-| company      | string  | Google          |
-| position     | string  | Product Manager |
-| session_type | string  | resume_review   |
-| min_rating   | float   | 4.5             |
-| is_paid      | boolean | true            |
-| page         | integer | 1               |
-| limit        | integer | 20              |
-
-### Example
-
-```text
-GET /alumni?company=Google&position=Software Engineer&page=1&limit=20
-```
-
-### Success Response
-
-**200 OK**
-
-```json
-{
-  "items": [
-    {
-      "id": 10,
-      "full_name": "Sarah Chen",
-      "college": "Stanford University",
-      "company": "Google",
-      "position": "Product Manager",
-      "rating": 4.9,
-      "hourly_rate": 500,
-      "profile_photo": "https://example.com/photo.jpg"
-    }
-  ],
-  "total": 1,
-  "page": 1,
-  "limit": 20
-}
-```
-
----
-
-## GET /alumni/{alumni_id}
-
-### Description
-
-Return a single alumni profile.
-
-### Success Response
-
-**200 OK**
-
-```json
-{
-  "id": 10,
-  "full_name": "Sarah Chen",
-  "college": "Stanford University",
-  "graduation_year": 2019,
-  "company": "Google",
-  "position": "Product Manager",
-  "bio": "Helping students break into product management.",
-  "rating": 4.9,
-  "review_count": 24,
-  "hourly_rate": 500,
-  "session_types": [
-    "resume_review",
-    "mock_interview",
-    "career_guidance"
-  ]
-}
-```
-
-### Error Responses
-
-**404 Not Found**
-
-```json
-{
-  "detail": "Alumni not found"
-}
-```
-
----
-
-# Availability Endpoints
-
-## GET /alumni/{alumni_id}/availability
-
-### Description
-
-Return available time slots.
-
-### Success Response
-
-**200 OK**
-
-```json
-[
-  {
-    "start_time": "2026-06-20T14:00:00Z",
-    "end_time": "2026-06-20T14:30:00Z"
-  },
-  {
-    "start_time": "2026-06-20T15:00:00Z",
-    "end_time": "2026-06-20T15:30:00Z"
-  }
-]
-```
-
----
-
-# Booking Endpoints
-
-## POST /bookings
-
-### Description
-
-Create a new booking.
-
-### Request Body
-
-```json
-{
-  "alumni_id": 10,
-  "session_type": "resume_review",
-  "scheduled_at": "2026-06-20T14:00:00Z"
-}
-```
-
-### Success Response
-
-**201 Created**
-
-```json
-{
-  "id": 100,
-  "status": "confirmed",
-  "meeting_link": null,
-  "scheduled_at": "2026-06-20T14:00:00Z"
-}
-```
-
-### Error Responses
-
-**409 Conflict**
-
-```json
-{
-  "detail": "Time slot unavailable"
-}
-```
-
----
-
-## GET /bookings
-
-### Description
-
-Return bookings for the authenticated user.
-
-### Success Response
-
-**200 OK**
-
-```json
-[
-  {
-    "id": 100,
-    "alumni_name": "Sarah Chen",
-    "session_type": "resume_review",
-    "scheduled_at": "2026-06-20T14:00:00Z",
-    "status": "confirmed"
-  }
-]
-```
-
----
-
-## GET /bookings/{booking_id}
-
-### Description
-
-Return booking details.
-
-### Success Response
-
-**200 OK**
-
-```json
-{
-  "id": 100,
-  "student_name": "John Doe",
-  "alumni_name": "Sarah Chen",
-  "session_type": "resume_review",
-  "scheduled_at": "2026-06-20T14:00:00Z",
-  "meeting_link": "https://meet.google.com/example",
-  "status": "confirmed"
-}
-```
-
----
-
-## PATCH /bookings/{booking_id}/cancel
-
-### Description
-
-Cancel a booking.
-
-### Success Response
-
-**200 OK**
-
-```json
-{
-  "message": "Booking cancelled successfully"
-}
-```
-
----
-
-# Review Endpoints
-
-## POST /reviews
-
-### Description
-
-Create a review for a completed session.
-
-### Request Body
-
-```json
-{
-  "booking_id": 100,
-  "rating": 5,
-  "comment": "Very helpful session."
-}
-```
-
-### Validation Rules
-
-* Rating must be between 1 and 5
-* Booking must belong to the user
-* Booking status must be completed
-
-### Success Response
-
-**201 Created**
-
-```json
-{
-  "message": "Review submitted successfully"
-}
-```
-
----
-
-## GET /alumni/{alumni_id}/reviews
-
-### Description
-
-Return reviews for an alumni profile.
-
-### Success Response
-
-**200 OK**
-
-```json
-[
-  {
-    "student_name": "John Doe",
-    "rating": 5,
-    "comment": "Excellent guidance.",
-    "created_at": "2026-06-20T15:00:00Z"
-  }
-]
-```
-
----
-
-# Admin Endpoints
-
-## GET /admin/users
-
-### Description
-
-Return all users.
-
-### Authorization
-
-Admin only.
-
----
-
-## PATCH /admin/users/{user_id}/verify
-
-### Description
-
-Verify an alumni account manually.
-
-### Authorization
-
-Admin only.
-
-### Success Response
-
-**200 OK**
-
-```json
-{
-  "message": "User verified successfully"
-}
-```
-
----
-
-# Common Error Format
-
-All errors follow this structure.
+FastAPI errors usually return:
 
 ```json
 {
@@ -613,19 +38,580 @@ All errors follow this structure.
 }
 ```
 
----
+Validation errors use FastAPI/Pydantic's default 422 response shape.
 
-# Status Codes
+## Root
 
-| Code | Meaning                 |
-| ---- | ----------------------- |
-| 200  | Success                 |
-| 201  | Resource created        |
-| 400  | Invalid request         |
-| 401  | Authentication required |
-| 403  | Permission denied       |
-| 404  | Resource not found      |
-| 409  | Conflict                |
-| 422  | Validation error        |
-| 500  | Internal server error   |
+### GET /
 
+Returns API health.
+
+Response:
+
+```json
+{
+  "message": "API is running"
+}
+```
+
+## Auth
+
+Routes defined in `backend/app/routes/auth.py`.
+
+### GET /auth/health
+
+Response:
+
+```json
+{
+  "status": "ok"
+}
+```
+
+### POST /auth/register
+
+Registers a user and returns a bearer token.
+
+Request body:
+
+```json
+{
+  "email": "student_be24@thapar.edu",
+  "password": "password",
+  "role": "student"
+}
+```
+
+Allowed roles:
+
+- `student`
+- `alumni`
+
+Backend validation:
+
+- `email` must be a valid email.
+- `role` must match the `UserRole` enum.
+- Duplicate email returns 400.
+- Student role requires email ending with `@thapar.edu`.
+
+Success response:
+
+```json
+{
+  "access_token": "jwt",
+  "token_type": "bearer"
+}
+```
+
+Known gaps:
+
+- No full name in registration payload.
+- No email verification token.
+- No college id.
+- No graduation year in registration payload.
+- No password complexity rule beyond being a string.
+
+### POST /auth/login
+
+Authenticates a user and returns a bearer token.
+
+Content type:
+
+```text
+application/x-www-form-urlencoded
+```
+
+Fields:
+
+```text
+username=user@example.com
+password=password
+```
+
+Success response:
+
+```json
+{
+  "access_token": "jwt",
+  "token_type": "bearer"
+}
+```
+
+Error response:
+
+```json
+{
+  "detail": "Invalid credentials"
+}
+```
+
+Known gap:
+
+- `is_verified` is not checked.
+
+### GET /auth/me
+
+Requires bearer token.
+
+Success response:
+
+```json
+{
+  "id": 1,
+  "email": "student_be24@thapar.edu",
+  "role": "student"
+}
+```
+
+## Profile
+
+Routes defined in `backend/app/routes/profile.py`.
+
+### GET /profile/me
+
+Requires bearer token.
+
+Creates a blank profile if none exists.
+
+Student response shape:
+
+```json
+{
+  "id": 1,
+  "user_id": 1,
+  "full_name": "Student Name",
+  "branch": "Computer Science",
+  "graduation_year": 2028,
+  "bio": "Short bio",
+  "linkedin_url": "https://linkedin.com/in/example"
+}
+```
+
+Alumni response shape includes alumni-specific fields:
+
+```json
+{
+  "id": 2,
+  "user_id": 2,
+  "full_name": "Alumni Name",
+  "branch": "Computer Science",
+  "graduation_year": 2020,
+  "company": "Google",
+  "designation": "Software Engineer",
+  "bio": "Short bio",
+  "linkedin_url": "https://linkedin.com/in/example"
+}
+```
+
+### PUT /profile/me
+
+Requires bearer token.
+
+Request body accepts any subset:
+
+```json
+{
+  "full_name": "Alumni Name",
+  "branch": "Computer Science",
+  "graduation_year": 2020,
+  "company": "Google",
+  "designation": "Software Engineer",
+  "bio": "Short bio",
+  "linkedin_url": "https://linkedin.com/in/example"
+}
+```
+
+Student users cannot update `company` or `designation`; those fields are dropped server-side.
+
+## Alumni
+
+Routes defined in `backend/app/routes/alumni.py`.
+
+### GET /alumni/
+
+Requires bearer token.
+
+Returns all alumni profiles matching optional filters.
+
+Query parameters:
+
+| Parameter | Type | Notes |
+| --- | --- | --- |
+| `company` | string | Case-insensitive contains filter |
+| `branch` | string | Case-insensitive contains filter |
+| `graduation_year` | integer | Exact match |
+| `search` | string | Searches full name, company, designation, and bio |
+
+Success response:
+
+```json
+[
+  {
+    "id": 2,
+    "full_name": "Alumni Name",
+    "branch": "Computer Science",
+    "graduation_year": 2020,
+    "company": "Google",
+    "designation": "Software Engineer",
+    "bio": "Short bio",
+    "linkedin_url": "https://linkedin.com/in/example"
+  }
+]
+```
+
+Known gaps:
+
+- No pagination.
+- No rating fields.
+- No session type fields.
+- No paid/free fields.
+- Frontend currently fetches all alumni and filters client-side.
+
+### GET /alumni/{alumni_id}
+
+Does not currently require bearer token.
+
+Success response:
+
+```json
+{
+  "id": 2,
+  "full_name": "Alumni Name",
+  "branch": "Computer Science",
+  "graduation_year": 2020,
+  "company": "Google",
+  "designation": "Software Engineer",
+  "bio": "Short bio",
+  "linkedin_url": "https://linkedin.com/in/example"
+}
+```
+
+Known bug:
+
+- Missing alumni/profile is not handled; the route can crash by reading fields from `None`.
+
+## Bookings
+
+Routes defined in `backend/app/routes/bookings.py`.
+
+### GET /bookings/health
+
+Response:
+
+```json
+{
+  "status": "ok"
+}
+```
+
+### POST /bookings/
+
+Requires bearer token.
+
+Only students can create bookings.
+
+Request body:
+
+```json
+{
+  "alumni_id": 2,
+  "session_type": "Resume Review",
+  "date": "2026-06-21",
+  "time": "14:30"
+}
+```
+
+Success response:
+
+```json
+{
+  "id": 1,
+  "student_id": 1,
+  "alumni_id": 2,
+  "session_type": "Resume Review",
+  "date": "2026-06-21",
+  "time": "14:30",
+  "status": "pending",
+  "created_at": "2026-06-21T12:00:00"
+}
+```
+
+Side effect:
+
+- Creates a notification for the alumni user.
+
+Known gaps:
+
+- No availability check.
+- No conflict check.
+- No meeting link.
+- No payment.
+
+### GET /bookings/me
+
+Requires bearer token.
+
+Returns bookings where the current user is either the student or alumni.
+
+Response:
+
+```json
+[
+  {
+    "id": 1,
+    "student_id": 1,
+    "alumni_id": 2,
+    "session_type": "Resume Review",
+    "date": "2026-06-21",
+    "time": "14:30",
+    "status": "pending",
+    "created_at": "2026-06-21T12:00:00"
+  }
+]
+```
+
+### GET /bookings/{booking_id}
+
+Requires bearer token.
+
+Only the booking student or alumni can view it.
+
+### PATCH /bookings/{booking_id}
+
+Requires bearer token.
+
+Request body:
+
+```json
+{
+  "status": "upcoming"
+}
+```
+
+Allowed requested statuses:
+
+- `upcoming`
+- `rejected`
+- `cancelled`
+- `completed`
+
+Rules:
+
+- Cannot revert to `pending`.
+- Only assigned alumni can accept pending bookings as `upcoming`.
+- Only assigned alumni can reject pending bookings as `rejected`.
+- Only the booking student can cancel pending/upcoming bookings.
+- Only assigned alumni can mark upcoming bookings as `completed`.
+
+Side effects:
+
+- Status changes create notifications for the other party.
+
+## Saved Alumni
+
+Routes defined in `backend/app/routes/saved.py`.
+
+### POST /saved/{alumni_id}
+
+Requires bearer token.
+
+Only students can save alumni.
+
+Success response:
+
+```json
+{
+  "message": "Alumni saved successfully"
+}
+```
+
+Duplicate response:
+
+```json
+{
+  "message": "Already saved"
+}
+```
+
+### DELETE /saved/{alumni_id}
+
+Requires bearer token.
+
+Removes a saved alumni record for the current user.
+
+Success response:
+
+```json
+{
+  "message": "Removed successfully"
+}
+```
+
+### GET /saved/me
+
+Requires bearer token.
+
+Response:
+
+```json
+[
+  {
+    "id": 2,
+    "full_name": "Alumni Name",
+    "company": "Google",
+    "designation": "Software Engineer"
+  }
+]
+```
+
+## Reviews
+
+Routes defined in `backend/app/routes/reviews.py`.
+
+### POST /reviews/
+
+Requires bearer token.
+
+Only the booking student can review, and only when booking status is `completed`.
+
+Request body:
+
+```json
+{
+  "booking_id": 1,
+  "rating": 5,
+  "comment": "Helpful session."
+}
+```
+
+Success response:
+
+```json
+{
+  "message": "Review submitted"
+}
+```
+
+Known gap:
+
+- `rating` is not validated to 1-5.
+
+### GET /reviews/alumni/{alumni_id}
+
+Returns all reviews for an alumni user.
+
+Response shape is raw ORM-shaped JSON from FastAPI serialization, not a dedicated response schema.
+
+## Dashboard
+
+Routes defined in `backend/app/routes/dashboard.py`.
+
+### GET /dashboard/student
+
+Requires bearer token.
+
+Only students can access.
+
+Response:
+
+```json
+{
+  "pending_requests": 1,
+  "upcoming_sessions": 2,
+  "completed_sessions": 3,
+  "saved_alumni": 4,
+  "recent_bookings": [
+    {
+      "id": 1,
+      "name": "Alumni Name",
+      "date": "2026-06-21",
+      "time": "14:30",
+      "status": "pending"
+    }
+  ]
+}
+```
+
+### GET /dashboard/alumni
+
+Requires bearer token.
+
+Only alumni can access.
+
+Response:
+
+```json
+{
+  "pending_requests": 1,
+  "upcoming_sessions": 2,
+  "completed_sessions": 3,
+  "total_students_helped": 4,
+  "recent_bookings": [
+    {
+      "id": 1,
+      "name": "Student Name",
+      "date": "2026-06-21",
+      "time": "14:30",
+      "status": "pending"
+    }
+  ]
+}
+```
+
+## Notifications
+
+Routes defined in `backend/app/routes/notifications.py`.
+
+### GET /notifications/me
+
+Requires bearer token.
+
+Returns current-user notifications ordered newest first.
+
+Response:
+
+```json
+[
+  {
+    "id": 1,
+    "user_id": 2,
+    "booking_id": 1,
+    "message": "New booking request from student@example.com for 2026-06-21 at 14:30.",
+    "is_read": false,
+    "created_at": "2026-06-21T12:00:00"
+  }
+]
+```
+
+### PATCH /notifications/{notification_id}/read
+
+Requires bearer token.
+
+Only the notification owner can mark it read.
+
+Response:
+
+```json
+{
+  "id": 1,
+  "user_id": 2,
+  "booking_id": 1,
+  "message": "Message",
+  "is_read": true,
+  "created_at": "2026-06-21T12:00:00"
+}
+```
+
+## Not Implemented Yet
+
+- `/api/v1` route prefix.
+- Cookie auth.
+- `POST /auth/logout`.
+- `POST /auth/verify-email`.
+- `GET /users/me`.
+- `/colleges`.
+- Alumni availability endpoints.
+- Admin endpoints.
+- Payment endpoints.
+- Meeting-link endpoints.
+- Password reset endpoints.
