@@ -1,5 +1,45 @@
-<!-- BEGIN:nextjs-agent-rules -->
-# This is NOT the Next.js you know
+# Frontend Agent Notes
 
-This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` before writing any code. Heed deprecation notices.
-<!-- END:nextjs-agent-rules -->
+Last audited: 2026-06-21.
+
+## Important Context
+
+- This frontend uses Next.js 16.2.9 and React 19.2.4.
+- Before making framework-sensitive changes, check the installed Next docs in `node_modules/next/dist/docs/` if behavior is unclear.
+- The app is currently not a clean production build.
+- Do not assume the stock create-next-app README still applies; see `README.md` and `../docs/*`.
+- Most styling is inline plus CSS variables in `src/app/globals.css`.
+- The active backend routes have no `/api/v1` prefix.
+- Auth is bearer-token based and stored in localStorage, not HTTP-only cookies.
+
+## Current Checks
+
+- `npm run lint` passes with one warning about raw `<img>` in `src/app/page.tsx`.
+- `npx tsc --noEmit` fails with known type errors.
+- `npm run build` fails in this workspace because Next infers `C:\Users\hp` as root and hits access restrictions.
+- `npm run build -- --webpack` also hits blocked Google font fetching plus root/readlink issues.
+
+## Known Type Errors To Fix First
+
+- `src/app/register/student/page.tsx` references undefined `setGraduationYear`.
+- `src/app/profile/page.tsx` reads `profile.profile_image`, but the stored profile type does not define it.
+- `src/lib/api.ts` assigns nullable backend profile fields into a non-nullable stored profile type.
+
+## Known Product Gaps
+
+- No frontend booking status controls even though backend supports status changes.
+- No frontend notification UI even though backend/API helpers exist.
+- No frontend review UI even though backend routes exist.
+- Onboarding and settings are localStorage-only.
+- Booking confirmation is localStorage-only.
+- Several visible strings contain mojibake artifacts.
+- Saved alumni page needs an explicit unauthenticated state.
+- Alumni detail route fetches without bearer auth.
+
+## Editing Guidance
+
+- Prefer fixing the TypeScript errors before broad UI work.
+- Keep docs updated when changing routes, API shapes, or localStorage behavior.
+- Avoid introducing new mock-only flows unless the docs clearly label them as local-only.
+- If adding backend-backed UI, use the helpers in `src/lib/api.ts` or extend that file consistently.
+- If changing auth storage, update `src/lib/api.ts`, `src/hooks/useAuth.ts`, backend auth docs, and user-flow docs together.
