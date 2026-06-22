@@ -2,7 +2,7 @@ from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
-    DATABASE_URL: str = "sqlite:///./alumni.db"
+    DATABASE_URL: str = "sqlite:///./app.db"
 
     SECRET_KEY: str = (
         "cfe5c41e9f057ff9808833d25287581139172d1caf0f715d56fa32b58714bb5d"

@@ -13,13 +13,13 @@ Routes are under `frontend/src/app`.
 | `/` | `page.tsx` | Implemented landing/home page |
 | `/login` | `login/page.tsx` | Implemented; live backend login |
 | `/register` | `register/page.tsx` | Implemented role choice page |
-| `/register/student` | `register/student/page.tsx` | Implemented but has TypeScript error from missing `setGraduationYear` |
+| `/register/student` | `register/student/page.tsx` | Implemented; persists full name and derived graduation year |
 | `/register/alumni` | `register/alumni/page.tsx` | Implemented; live backend registration/profile update |
 | `/dashboard` | `dashboard/page.tsx` | Implemented; live backend dashboard data |
 | `/search` | `search/page.tsx` | Implemented; live backend alumni fetch and client-side filters |
 | `/search/loading` | `search/loading.tsx` | Implemented loading UI |
 | `/profile` | `profile/page.tsx` | Implemented current-user profile from local auth storage; has TypeScript issue around `profile_image` |
-| `/profile/[id]` | `profile/[id]/page.tsx` | Implemented alumni profile detail; server fetches backend without auth header |
+| `/profile/[id]` | `profile/[id]/page.tsx` | Implemented alumni profile detail; client fetches backend with bearer auth |
 | `/profile/[id]/loading` | `profile/[id]/loading.tsx` | Implemented loading UI |
 | `/bookings` | `bookings/page.tsx` | Implemented student booking creation |
 | `/bookings/confirmation` | `bookings/confirmation/page.tsx` | Implemented localStorage confirmation page |
@@ -72,7 +72,7 @@ Routes are mounted directly on the FastAPI app. There is currently no `/api/v1` 
 ### Alumni
 
 - `GET /alumni/`
-- `GET /alumni/{alumni_id}`
+- `GET /alumni/{alumni_id}`; requires bearer token
 
 ### Bookings
 

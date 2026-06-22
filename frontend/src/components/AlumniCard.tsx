@@ -20,8 +20,7 @@ export default function AlumniCard({
   company,
   role,
 }: Props) {
-  const { toggleSave, isSaved } = useSavedAlumni();
-
+  const { toggleSave, isSaved, canSave } = useSavedAlumni();
   const saved = isSaved(id);
 
   return (
@@ -73,7 +72,7 @@ export default function AlumniCard({
               color: "var(--text-secondary)",
             }}
           >
-            {role} · {company}
+            {role} - {company}
           </p>
         </div>
       </div>
@@ -86,24 +85,27 @@ export default function AlumniCard({
           flexWrap: "wrap",
         }}
       >
-        <button
-          onClick={() => toggleSave(id)}
-          style={{
-            background: "transparent",
-            border: "1px solid var(--border)",
-            borderRadius: "var(--radius-md)",
-            padding: "12px 16px",
-            cursor: "pointer",
-            minHeight: "44px",
-            fontSize: "15px",
-            color: saved
-              ? "var(--accent)"
-              : "var(--text-secondary)",
-            transition: "0.2s ease",
-          }}
-        >
-          {saved ? "♥ Saved" : "♡ Save"}
-        </button>
+        {canSave ? (
+          <button
+            onClick={() => toggleSave(id)}
+            aria-pressed={saved}
+            style={{
+              background: "transparent",
+              border: "1px solid var(--border)",
+              borderRadius: "var(--radius-md)",
+              padding: "12px 16px",
+              cursor: "pointer",
+              minHeight: "44px",
+              fontSize: "15px",
+              color: saved
+                ? "var(--accent)"
+                : "var(--text-secondary)",
+              transition: "0.2s ease",
+            }}
+          >
+            {saved ? "Saved" : "Save"}
+          </button>
+        ) : null}
 
         <Link
           href={`/profile/${id}`}

@@ -4,23 +4,16 @@ import { useEffect, useState } from "react";
 
 import { useAuth } from "@/hooks/useAuth";
 import {
+  Alumni,
   fetchSavedAlumni,
   removeSavedAlumni,
   saveAlumni,
 } from "@/lib/api";
 
-type SavedAlumniItem = {
-  id: number;
-  full_name?: string;
-  company?: string;
-  designation?: string;
-  profile_image?: string;
-};
-
 export function useSavedAlumni() {
   const { user } = useAuth();
   const [savedAlumni, setSavedAlumni] =
-    useState<SavedAlumniItem[]>([]);
+    useState<Alumni[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
@@ -97,6 +90,7 @@ export function useSavedAlumni() {
     savedIds,
     loading,
     error,
+    canSave: user?.role === "student",
     isSaved: (id: number) =>
       savedIds.includes(id),
     toggleSave,

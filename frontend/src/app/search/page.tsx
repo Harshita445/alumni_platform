@@ -6,23 +6,12 @@ import { useRouter } from "next/navigation";
 import AlumniCard from "@/components/AlumniCard";
 import EmptyState from "@/components/EmptyState";
 import { useAuth } from "@/hooks/useAuth";
-import { fetchAlumni } from "@/lib/api";
-
-type AlumniApiItem = {
-  id: number;
-  full_name: string;
-  company?: string;
-  designation?: string;
-  branch?: string;
-  graduation_year?: number;
-  bio?: string;
-  linkedin_url?: string;
-};
+import { Alumni, fetchAlumni } from "@/lib/api";
 
 export default function SearchPage() {
   const router = useRouter();
   const { user } = useAuth();
-  const [alumni, setAlumni] = useState<AlumniApiItem[]>([]);
+  const [alumni, setAlumni] = useState<Alumni[]>([]);
   const [companyFilter, setCompanyFilter] = useState("");
   const [roleFilter, setRoleFilter] = useState("");
   const [loading, setLoading] = useState(false);
@@ -246,7 +235,7 @@ export default function SearchPage() {
             <AlumniCard
               key={alumniPerson.id}
               id={alumniPerson.id}
-              name={alumniPerson.full_name}
+              name={alumniPerson.full_name || "Alumnus"}
               profileImage="/default-avatar.png"
               company={alumniPerson.company || "Independent"}
               role={alumniPerson.designation || "Alumni"}

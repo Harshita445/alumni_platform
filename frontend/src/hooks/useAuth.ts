@@ -15,16 +15,22 @@ export function useAuth() {
   );
 
   useEffect(() => {
+    const syncUser = () => {
+      setUser(getStoredUser());
+    };
+
     const handleStorage = (event: StorageEvent) => {
       if (event.key === "current-user") {
-        setUser(getStoredUser());
+        syncUser();
       }
     };
 
     window.addEventListener("storage", handleStorage);
+    window.addEventListener("current-user-changed", syncUser);
 
     return () => {
       window.removeEventListener("storage", handleStorage);
+      window.removeEventListener("current-user-changed", syncUser);
     };
   }, []);
 

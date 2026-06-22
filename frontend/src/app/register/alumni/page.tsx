@@ -98,6 +98,16 @@ export default function AlumniRegisterPage() {
         />
 
         <input
+          type="password"
+          placeholder="Password"
+          value={password}
+          onChange={(e) =>
+            setPassword(e.target.value)
+          }
+          style={inputStyle}
+        />
+
+        <input
           placeholder="Graduation year"
           value={graduationYear}
           onChange={(e) =>

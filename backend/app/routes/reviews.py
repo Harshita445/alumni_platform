@@ -3,6 +3,7 @@ from fastapi import Depends
 from fastapi import HTTPException
 
 from pydantic import BaseModel
+from pydantic import Field
 
 from sqlalchemy.orm import Session
 
@@ -22,7 +23,7 @@ router = APIRouter(
 
 class ReviewCreate(BaseModel):
     booking_id: int
-    rating: int
+    rating: int = Field(ge=1, le=5)
     comment: str | None = None
 
 

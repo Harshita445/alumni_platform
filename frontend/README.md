@@ -58,7 +58,7 @@ npm run start
 - `/`: landing page.
 - `/login`: live backend login.
 - `/register`: account type choice.
-- `/register/student`: student registration, currently blocked by a TypeScript bug.
+- `/register/student`: student registration with derived graduation year and profile update.
 - `/register/alumni`: alumni registration.
 - `/dashboard`: student/alumni dashboard from backend data.
 - `/search`: alumni discovery from backend data with client-side filters.
@@ -104,15 +104,9 @@ Not yet surfaced in UI:
 
 - `npm run lint` passes.
 - Lint warning remains in `src/app/page.tsx`: raw `<img>` should be replaced by Next `<Image />` or intentionally kept.
-- `npx tsc --noEmit` fails.
+- `npx tsc --noEmit` passes.
 - `npm run build` currently fails in this environment because Next infers `C:\Users\hp` as workspace root and hits access denied.
 - `npm run build -- --webpack` also fails because restricted network blocks Google font fetching and the root access issue remains.
-
-## Current TypeScript Errors
-
-- `src/app/register/student/page.tsx`: `setGraduationYear` is referenced but not defined.
-- `src/app/profile/page.tsx`: `profile_image` is read from a profile type that does not include it.
-- `src/lib/api.ts`: backend profile responses allow `null`, but `StoredUser.profile` does not.
 
 ## Known UI/Data Issues
 
@@ -120,18 +114,15 @@ Not yet surfaced in UI:
 - Settings and onboarding are local-only and not persisted to backend.
 - Booking confirmation is local-only and depends on `latest-booking`.
 - Profile page uses stored profile data instead of refetching.
-- Saved page lacks a proper unauthenticated state.
-- The alumni detail page fetches without auth headers.
 - Empty auth form component files exist under `src/components/auth`.
 
 ## High Priority Frontend Work
 
-1. Fix TypeScript errors.
-2. Configure Next root/build behavior.
-3. Make fonts build-safe in restricted environments.
-4. Fix mojibake strings.
-5. Add booking management UI.
-6. Add notification UI.
-7. Add review UI.
-8. Decide which localStorage-only flows need backend persistence.
-9. Add frontend tests for auth, search, bookings, saved alumni, and dashboards.
+1. Configure Next root/build behavior.
+2. Make fonts build-safe in restricted environments.
+3. Finish mojibake cleanup if any broken strings reappear.
+4. Add booking management UI.
+5. Add notification UI.
+6. Add review UI.
+7. Decide which localStorage-only flows need backend persistence.
+8. Add frontend tests for auth, search, bookings, saved alumni, and dashboards.

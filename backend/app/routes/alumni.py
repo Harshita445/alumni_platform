@@ -1,6 +1,6 @@
 from typing import Optional
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
@@ -83,6 +83,7 @@ def get_alumni(
 def get_alumni_details(
     alumni_id: int,
     db: Session = Depends(get_db),
+    _current_user: User = Depends(get_current_user),
 ):
     profile = (
         db.query(Profile)
@@ -93,6 +94,12 @@ def get_alumni_details(
         )
         .first()
     )
+
+    if profile is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Alumnus not found.",
+        )
 
     return {
         "id": profile.user_id,

@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 from sqlalchemy import or_
@@ -65,6 +67,39 @@ def create_booking(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Alumnus not found.",
+        )
+
+    requested_start = datetime.strptime(
+        f"{payload.date} {payload.time}",
+        "%Y-%m-%d %H:%M",
+    )
+
+    if requested_start <= datetime.now():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Booking time must be in the future.",
+        )
+
+    conflicting_booking = (
+        db.query(Booking)
+        .filter(Booking.alumni_id == payload.alumni_id)
+        .filter(Booking.date == payload.date)
+        .filter(Booking.time == payload.time)
+        .filter(
+            Booking.status.in_(
+                [
+                    BookingStatus.PENDING.value,
+                    BookingStatus.UPCOMING.value,
+                ]
+            )
+        )
+        .first()
+    )
+
+    if conflicting_booking is not None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="This alumni slot is already requested or booked.",
         )
 
     booking = Booking(

@@ -4,21 +4,56 @@ const API_BASE =
 
 const STORAGE_KEY = "current-user";
 
+export type UserProfile = {
+  full_name?: string | null;
+  branch?: string | null;
+  graduation_year?: number | null;
+  company?: string | null;
+  designation?: string | null;
+  bio?: string | null;
+  linkedin_url?: string | null;
+  profile_image?: string | null;
+  target_companies?: string[];
+  desired_roles?: string[];
+};
+
+export type Alumni = {
+  id: number;
+  full_name?: string | null;
+  branch?: string | null;
+  graduation_year?: number | null;
+  company?: string | null;
+  designation?: string | null;
+  bio?: string | null;
+  linkedin_url?: string | null;
+  profile_image?: string | null;
+};
+
+export type BookingStatus =
+  | "pending"
+  | "upcoming"
+  | "completed"
+  | "cancelled"
+  | "rejected";
+
+export type Booking = {
+  id: number;
+  student_id: number;
+  alumni_id: number;
+  session_type: string;
+  date: string;
+  time: string;
+  status: BookingStatus;
+  created_at?: string | null;
+};
+
 export type StoredUser = {
   id: number;
   email: string;
   role: "student" | "alumni";
   access_token: string;
   token_type: string;
-  profile?: {
-    full_name?: string;
-    branch?: string;
-    graduation_year?: number;
-    company?: string;
-    designation?: string;
-    bio?: string;
-    linkedin_url?: string;
-  };
+  profile?: UserProfile;
 };
 
 export function getStoredUser(): StoredUser | null {
@@ -45,6 +80,7 @@ export function saveStoredUser(user: StoredUser) {
   }
 
   localStorage.setItem(STORAGE_KEY, JSON.stringify(user));
+  window.dispatchEvent(new Event("current-user-changed"));
 }
 
 export function clearStoredUser() {
@@ -53,6 +89,7 @@ export function clearStoredUser() {
   }
 
   localStorage.removeItem(STORAGE_KEY);
+  window.dispatchEvent(new Event("current-user-changed"));
 }
 
 async function request(
@@ -180,7 +217,7 @@ export function getAuthHeaders(token: string) {
 
 export async function fetchProfile(
   token: string
-): Promise<any> {
+): Promise<UserProfile> {
   return request("/profile/me", {
     headers: getAuthHeaders(token),
   });
@@ -188,8 +225,8 @@ export async function fetchProfile(
 
 export async function updateProfile(
   token: string,
-  data: any
-) {
+  data: UserProfile
+): Promise<UserProfile> {
   return request("/profile/me", {
     method: "PUT",
     headers: getAuthHeaders(token),
@@ -197,8 +234,26 @@ export async function updateProfile(
   });
 }
 
-export async function fetchAlumni(token?: string) {
-  return request("/alumni", {
+export async function fetchAlumni(
+  token?: string,
+  filters: {
+    company?: string;
+    branch?: string;
+    graduation_year?: number;
+    search?: string;
+  } = {}
+): Promise<Alumni[]> {
+  const params = new URLSearchParams();
+
+  Object.entries(filters).forEach(([key, value]) => {
+    if (value !== undefined && value !== "") {
+      params.set(key, String(value));
+    }
+  });
+
+  const query = params.toString();
+
+  return request(`/alumni${query ? `?${query}` : ""}`, {
     headers: token ? getAuthHeaders(token) : undefined,
   });
 }
@@ -206,13 +261,13 @@ export async function fetchAlumni(token?: string) {
 export async function fetchAlumniDetails(
   id: string | number,
   token?: string
-) {
+): Promise<Alumni> {
   return request(`/alumni/${id}`, {
     headers: token ? getAuthHeaders(token) : undefined,
   });
 }
 
-export async function fetchSavedAlumni(token: string) {
+export async function fetchSavedAlumni(token: string): Promise<Alumni[]> {
   return request("/saved/me", {
     headers: getAuthHeaders(token),
   });
@@ -243,11 +298,31 @@ export async function createBooking(
     date: string;
     time: string;
   }
-) {
+): Promise<Booking> {
   return request("/bookings", {
     method: "POST",
     headers: getAuthHeaders(token),
     body: JSON.stringify(data),
+  });
+}
+
+export async function fetchMyBookings(
+  token: string
+): Promise<Booking[]> {
+  return request("/bookings/me", {
+    headers: getAuthHeaders(token),
+  });
+}
+
+export async function updateBookingStatus(
+  token: string,
+  bookingId: number,
+  status: BookingStatus
+): Promise<Booking> {
+  return request(`/bookings/${bookingId}`, {
+    method: "PATCH",
+    headers: getAuthHeaders(token),
+    body: JSON.stringify({ status }),
   });
 }
 

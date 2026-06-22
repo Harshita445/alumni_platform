@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 import { useAuth } from "@/hooks/useAuth";
-import { createBooking, fetchAlumni } from "@/lib/api";
+import { Alumni, createBooking, fetchAlumni } from "@/lib/api";
 
 const labelStyle = {
   display: "block",
@@ -26,16 +26,11 @@ const inputStyle = {
 
 export default function BookingPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { user } = useAuth();
 
-  const [alumni, setAlumni] = useState<
-    Array<{
-      id: number;
-      full_name?: string;
-      company?: string;
-      designation?: string;
-    }>
-  >([]);
+  const requestedAlumniId = searchParams.get("alumni_id");
+  const [alumni, setAlumni] = useState<Alumni[]>([]);
   const [alumniId, setAlumniId] = useState("");
   const [sessionType, setSessionType] =
     useState("Resume Review");
@@ -43,30 +38,55 @@ export default function BookingPage() {
   const [time, setTime] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(Boolean(user));
 
   useEffect(() => {
     if (!user) {
       return;
     }
 
-    setLoading(true);
-    fetchAlumni(user.access_token)
-      .then((result) => {
+    let active = true;
+
+    const loadAlumni = async () => {
+      try {
+        const result = await fetchAlumni(user.access_token);
+        if (!active) {
+          return;
+        }
+
         setAlumni(result);
         if (result.length > 0) {
-          setAlumniId(String(result[0].id));
+          const requestedAlumnus = result.find(
+            (item) => String(item.id) === requestedAlumniId
+          );
+
+          setAlumniId(
+            String(requestedAlumnus?.id || result[0].id)
+          );
         }
-      })
-      .catch((err: unknown) => {
+      } catch (err: unknown) {
+        if (!active) {
+          return;
+        }
+
         setError(
           err instanceof Error
             ? err.message
             : "Unable to load alumni."
         );
-      })
-      .finally(() => setLoading(false));
-  }, [user]);
+      } finally {
+        if (active) {
+          setLoading(false);
+        }
+      }
+    };
+
+    loadAlumni();
+
+    return () => {
+      active = false;
+    };
+  }, [requestedAlumniId, user]);
 
   const handleConfirm = async () => {
     if (!alumniId || !date || !time) {
@@ -216,7 +236,7 @@ export default function BookingPage() {
         }}
       >
         {loading ? (
-          <p>Loading available alumni…</p>
+          <p>Loading available alumni...</p>
         ) : null}
 
         <div>
@@ -236,7 +256,8 @@ export default function BookingPage() {
                 key={alumnus.id}
                 value={alumnus.id}
               >
-                {alumnus.full_name || "Alumnus"} — {alumnus.company}
+                {alumnus.full_name || "Alumnus"} -{" "}
+                {alumnus.company || "Independent"}
               </option>
             ))}
           </select>

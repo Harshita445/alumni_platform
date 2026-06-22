@@ -69,15 +69,15 @@ Defined in `frontend/src/app/globals.css`.
 - `/`: hero landing page with stats, CTA links, and external Unsplash image.
 - `/login`: centered login panel.
 - `/register`: role choice cards.
-- `/register/student`: student registration form with derived admission/graduation year.
+- `/register/student`: student registration form with derived admission/graduation year and profile persistence.
 - `/register/alumni`: alumni registration form with company select, LinkedIn, bio.
 - `/dashboard`: stat cards and recent booking list.
 - `/search`: filter panel and alumni card grid.
 - `/profile`: current-user profile summary from local auth storage.
-- `/profile/[id]`: alumni detail card.
+- `/profile/[id]`: authenticated alumni detail card with student booking CTA.
 - `/bookings`: student booking request form.
 - `/bookings/confirmation`: latest-booking confirmation from localStorage.
-- `/saved`: saved alumni list.
+- `/saved`: saved alumni list with explicit logged-out and alumni-account states.
 - `/settings`: local settings toggles and timezone select.
 - `/onboarding`: onboarding preferences form.
 - `not-found.tsx`: app-level 404 page.
@@ -88,10 +88,7 @@ Several files contain mojibake, likely from Unicode characters being saved or di
 
 - `frontend/src/app/page.tsx`: broken bullet/star text in hero badge and stats.
 - `frontend/src/app/dashboard/page.tsx`: broken middle dot between date/time.
-- `frontend/src/app/register/page.tsx`: broken emoji in role card headings.
-- `frontend/src/app/bookings/page.tsx`: broken ellipsis and em dash.
-- `frontend/src/app/profile/[id]/page.tsx`: broken middle dot.
-- `frontend/src/components/AlumniCard.tsx`: broken middle dot and heart icons.
+- `frontend/src/app/page.tsx`: broken bullet/star text in hero badge and stats.
 - Older docs also contained mojibake arrows/box drawing; this audit rewrites them in ASCII.
 
 ## Accessibility And UX Notes
@@ -99,17 +96,17 @@ Several files contain mojibake, likely from Unicode characters being saved or di
 - Most forms have visible labels.
 - Buttons generally have disabled states where submission is async.
 - Several controls are raw HTML inputs/selects with inline styles.
-- The save button uses text hearts rather than an icon component.
+- The save button uses text rather than an icon component.
 - There is no global toast/notification system.
 - Error states exist on login, registration, dashboard, search, booking, and saved pages.
 - Loading states exist on dashboard, search, booking alumni loading, and saved alumni.
-- The saved alumni page does not explicitly tell unauthenticated users to log in.
+- The saved alumni page explicitly tells unauthenticated users to log in.
 - The app uses many large rounded cards; card radius is currently `28px`.
 - The current palette is strongly warm brown/tan, which differs from the earlier blue/white design note.
 
 ## Design Work Left
 
-- Fix mojibake strings.
+- Finish mojibake cleanup if broken strings reappear.
 - Decide whether to keep the warm editorial palette or return to the earlier neutral/blue system.
 - Add consistent hover/focus states across buttons, links, inputs, and cards.
 - Convert repeated inline styles into shared components or CSS classes.

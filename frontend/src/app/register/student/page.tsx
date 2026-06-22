@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 import {
@@ -8,35 +8,26 @@ import {
   getGraduationYear,
   isThaparStudentEmail,
 } from "@/lib/auth";
-import { registerUser } from "@/lib/api";
+import {
+  registerUser,
+  saveStoredUser,
+  updateProfile,
+} from "@/lib/api";
 
 export default function StudentRegisterPage() {
   const router = useRouter();
 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
-  const [graduationYear, setGraduationYear] =
-    useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const admissionYear = getAdmissionYear(email);
-
-  useEffect(() => {
-    if (!isThaparStudentEmail(email)) {
-      setGraduationYear("");
-      return;
-    }
-
-    const year = getAdmissionYear(email);
-
-    if (!year) {
-      return;
-    }
-
-    setGraduationYear(String(getGraduationYear(year)));
-  }, [email]);
+  const graduationYear =
+    isThaparStudentEmail(email) && admissionYear
+      ? String(getGraduationYear(admissionYear))
+      : "";
 
   const handleSubmit = async () => {
     setError(null);
@@ -54,11 +45,25 @@ export default function StudentRegisterPage() {
     setIsSubmitting(true);
 
     try {
-      await registerUser({
+      const registeredUser = await registerUser({
         email,
         password,
         role: "student",
       });
+
+      const profile = await updateProfile(
+        registeredUser.access_token,
+        {
+          full_name: name,
+          graduation_year: Number(graduationYear),
+        }
+      );
+
+      saveStoredUser({
+        ...registeredUser,
+        profile,
+      });
+
       router.push("/dashboard");
     } catch (err: unknown) {
       setError(
@@ -105,10 +110,8 @@ export default function StudentRegisterPage() {
 
         <input
           value={graduationYear}
-          onChange={(e) =>
-            setGraduationYear(e.target.value)
-          }
           placeholder="Graduation year"
+          readOnly
           style={inputStyle}
         />
 

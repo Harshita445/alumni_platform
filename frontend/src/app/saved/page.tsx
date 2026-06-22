@@ -1,9 +1,14 @@
 "use client";
 
+import Link from "next/link";
+import type React from "react";
+
 import AlumniCard from "@/components/AlumniCard";
+import { useAuth } from "@/hooks/useAuth";
 import { useSavedAlumni } from "@/hooks/useSavedAlumni";
 
 export default function SavedPage() {
+  const { user } = useAuth();
   const { savedAlumni, loading, error } = useSavedAlumni();
 
   return (
@@ -23,7 +28,21 @@ export default function SavedPage() {
         Saved Alumni
       </h1>
 
-      {loading ? (
+      {!user ? (
+        <EmptyPanel
+          title="Log in to view saved alumni"
+          message="Your saved mentors are tied to your student account."
+        >
+          <Link href="/login" style={primaryLinkStyle}>
+            Go to Login
+          </Link>
+        </EmptyPanel>
+      ) : user.role !== "student" ? (
+        <EmptyPanel
+          title="Saved alumni is for students"
+          message="Alumni accounts do not maintain a saved mentor list."
+        />
+      ) : loading ? (
         <div
           style={{
             padding: "24px",
@@ -33,58 +52,16 @@ export default function SavedPage() {
           Loading saved alumni...
         </div>
       ) : error ? (
-        <div
-          style={{
-            background: "var(--surface)",
-            border: "1px solid var(--border)",
-            borderRadius: "var(--radius-lg)",
-            padding: "48px",
-            textAlign: "center",
-            color: "var(--danger)",
-          }}
-        >
-          <h3
-            style={{
-              marginBottom: "12px",
-            }}
-          >
-            Could not load saved alumni
-          </h3>
-
-          <p
-            style={{
-              color: "var(--text-secondary)",
-            }}
-          >
-            {error}
-          </p>
-        </div>
+        <EmptyPanel
+          title="Could not load saved alumni"
+          message={error}
+          tone="danger"
+        />
       ) : savedAlumni.length === 0 ? (
-        <div
-          style={{
-            background: "var(--surface)",
-            border: "1px solid var(--border)",
-            borderRadius: "var(--radius-lg)",
-            padding: "48px",
-            textAlign: "center",
-          }}
-        >
-          <h3
-            style={{
-              marginBottom: "12px",
-            }}
-          >
-            No saved alumni yet
-          </h3>
-
-          <p
-            style={{
-              color: "var(--text-secondary)",
-            }}
-          >
-            Save mentors to revisit them later.
-          </p>
-        </div>
+        <EmptyPanel
+          title="No saved alumni yet"
+          message="Save mentors to revisit them later."
+        />
       ) : (
         <div
           style={{
@@ -108,3 +85,60 @@ export default function SavedPage() {
     </main>
   );
 }
+
+function EmptyPanel({
+  title,
+  message,
+  tone,
+  children,
+}: {
+  title: string;
+  message: string | null;
+  tone?: "danger";
+  children?: React.ReactNode;
+}) {
+  return (
+    <div
+      style={{
+        background: "var(--surface)",
+        border: "1px solid var(--border)",
+        borderRadius: "var(--radius-lg)",
+        padding: "48px",
+        textAlign: "center",
+        color: tone === "danger" ? "var(--danger)" : undefined,
+      }}
+    >
+      <h3
+        style={{
+          marginBottom: "12px",
+        }}
+      >
+        {title}
+      </h3>
+
+      <p
+        style={{
+          color: "var(--text-secondary)",
+          marginBottom: children ? "24px" : 0,
+        }}
+      >
+        {message}
+      </p>
+
+      {children}
+    </div>
+  );
+}
+
+const primaryLinkStyle = {
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  background: "var(--primary)",
+  color: "#fff",
+  padding: "12px 18px",
+  borderRadius: "var(--radius-md)",
+  textDecoration: "none",
+  minHeight: "44px",
+  fontWeight: 500,
+};

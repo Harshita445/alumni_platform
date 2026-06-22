@@ -1,56 +1,108 @@
+"use client";
+
 import Image from "next/image";
-import { notFound } from "next/navigation";
+import Link from "next/link";
+import { useParams } from "next/navigation";
+import type React from "react";
+import { useEffect, useState } from "react";
 
-const API_BASE =
-  process.env.NEXT_PUBLIC_API_URL ||
-  "http://localhost:8000";
+import { useAuth } from "@/hooks/useAuth";
+import { Alumni, fetchAlumniDetails } from "@/lib/api";
 
-type ProfilePageProps = {
-  params: {
-    id: string;
-  };
-};
+const FALLBACK_IMAGE =
+  "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&q=80";
 
-export default async function ProfilePage({
-  params,
-}: ProfilePageProps) {
-  const { id } = params;
-  const response = await fetch(
-    `${API_BASE}/alumni/${id}`,
-    {
-      cache: "no-store",
+export default function ProfilePage() {
+  const params = useParams<{ id: string }>();
+  const { user } = useAuth();
+  const [alumni, setAlumni] = useState<Alumni | null>(null);
+  const [loading, setLoading] = useState(Boolean(user));
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!user || !params.id) {
+      return;
     }
-  );
 
-  if (!response.ok) {
-    notFound();
+    let active = true;
+
+    const loadAlumni = async () => {
+      setError(null);
+
+      try {
+        const result = await fetchAlumniDetails(
+          params.id,
+          user.access_token
+        );
+
+        if (active) {
+          setAlumni(result);
+        }
+      } catch (err: unknown) {
+        if (active) {
+          setError(
+            err instanceof Error
+              ? err.message
+              : "Unable to load this alumni profile."
+          );
+        }
+      } finally {
+        if (active) {
+          setLoading(false);
+        }
+      }
+    };
+
+    loadAlumni();
+
+    return () => {
+      active = false;
+    };
+  }, [params.id, user]);
+
+  if (!user) {
+    return (
+      <CenteredState
+        title="Log in to view profiles"
+        message="You need to be signed in to open alumni profile details."
+      >
+        <Link href="/login" style={primaryLinkStyle}>
+          Go to Login
+        </Link>
+      </CenteredState>
+    );
   }
 
-  const alumni = await response.json();
+  if (loading) {
+    return (
+      <CenteredState
+        title="Loading profile"
+        message="Fetching the latest alumni details..."
+      />
+    );
+  }
+
+  if (error || !alumni) {
+    return (
+      <CenteredState
+        title="Profile unavailable"
+        message={error || "This alumni profile could not be found."}
+      >
+        <Link href="/search" style={primaryLinkStyle}>
+          Back to Search
+        </Link>
+      </CenteredState>
+    );
+  }
+
+  const displayName = alumni.full_name || "Alumnus";
 
   return (
-    <main
-      style={{
-        maxWidth: "800px",
-        margin: "0 auto",
-        padding: "48px 24px 80px",
-      }}
-    >
-      <div
-        style={{
-          background: "var(--surface)",
-          border: "1px solid var(--border)",
-          borderRadius: "var(--radius-lg)",
-          padding: "40px",
-          boxShadow: "var(--shadow-sm)",
-        }}
-      >
+    <main style={mainStyle}>
+      <div style={cardStyle}>
         <Image
-          src={
-            alumni.profile_image ||
-            "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&q=80"
-          }
-          alt={alumni.full_name}
+          src={alumni.profile_image || FALLBACK_IMAGE}
+          alt={displayName}
           width={120}
           height={120}
           style={{
@@ -61,7 +113,7 @@ export default async function ProfilePage({
         />
 
         <h1 style={{ marginBottom: "12px" }}>
-          {alumni.full_name}
+          {displayName}
         </h1>
 
         <p
@@ -70,7 +122,8 @@ export default async function ProfilePage({
             marginBottom: "8px",
           }}
         >
-          {alumni.designation} · {alumni.company}
+          {alumni.designation || "Alumni"} -{" "}
+          {alumni.company || "Independent"}
         </p>
 
         <p
@@ -96,29 +149,16 @@ export default async function ProfilePage({
             display: "flex",
             gap: "24px",
             flexWrap: "wrap",
+            alignItems: "flex-end",
           }}
         >
           <div>
-            <p
-              style={{
-                color: "var(--text-secondary)",
-                marginBottom: "4px",
-              }}
-            >
-              Branch
-            </p>
+            <p style={metaLabelStyle}>Branch</p>
             <strong>{alumni.branch || "Not specified"}</strong>
           </div>
 
           <div>
-            <p
-              style={{
-                color: "var(--text-secondary)",
-                marginBottom: "4px",
-              }}
-            >
-              LinkedIn
-            </p>
+            <p style={metaLabelStyle}>LinkedIn</p>
             {alumni.linkedin_url ? (
               <a
                 href={alumni.linkedin_url}
@@ -132,8 +172,81 @@ export default async function ProfilePage({
               <span>Not specified</span>
             )}
           </div>
+
+          {user.role === "student" ? (
+            <Link
+              href={`/bookings?alumni_id=${alumni.id}`}
+              style={primaryLinkStyle}
+            >
+              Book Session
+            </Link>
+          ) : null}
         </div>
       </div>
     </main>
   );
 }
+
+function CenteredState({
+  title,
+  message,
+  children,
+}: {
+  title: string;
+  message: string;
+  children?: React.ReactNode;
+}) {
+  return (
+    <main
+      style={{
+        maxWidth: "600px",
+        margin: "80px auto",
+        padding: "40px 24px",
+        textAlign: "center",
+      }}
+    >
+      <h1 style={{ marginBottom: "16px" }}>{title}</h1>
+      <p
+        style={{
+          color: "var(--text-secondary)",
+          marginBottom: children ? "24px" : 0,
+        }}
+      >
+        {message}
+      </p>
+      {children}
+    </main>
+  );
+}
+
+const mainStyle = {
+  maxWidth: "800px",
+  margin: "0 auto",
+  padding: "48px 24px 80px",
+};
+
+const cardStyle = {
+  background: "var(--surface)",
+  border: "1px solid var(--border)",
+  borderRadius: "var(--radius-lg)",
+  padding: "40px",
+  boxShadow: "var(--shadow-sm)",
+};
+
+const metaLabelStyle = {
+  color: "var(--text-secondary)",
+  marginBottom: "4px",
+};
+
+const primaryLinkStyle = {
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  background: "var(--primary)",
+  color: "#fff",
+  padding: "12px 18px",
+  borderRadius: "var(--radius-md)",
+  textDecoration: "none",
+  minHeight: "44px",
+  fontWeight: 500,
+};

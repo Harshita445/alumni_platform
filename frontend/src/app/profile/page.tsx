@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { useAuth } from "@/hooks/useAuth";
+import type { UserProfile } from "@/lib/api";
 
 export default function MyProfilePage() {
   const { user } = useAuth();
@@ -125,17 +126,7 @@ export default function MyProfilePage() {
   );
 }
 
-type ProfileData = {
-  branch?: string;
-  graduation_year?: number;
-  target_companies?: string[];
-  desired_roles?: string[];
-  company?: string;
-  designation?: string;
-  linkedin_url?: string;
-};
-
-function StudentSection({ profile }: { profile: ProfileData }) {
+function StudentSection({ profile }: { profile: UserProfile }) {
   const hasProfile = Boolean(
     profile.branch || profile.graduation_year ||
       profile.target_companies || profile.desired_roles
@@ -206,7 +197,7 @@ function StudentSection({ profile }: { profile: ProfileData }) {
   );
 }
 
-function AlumniSection({ profile }: { profile: ProfileData }) {
+function AlumniSection({ profile }: { profile: UserProfile }) {
   return (
     <div
       style={{

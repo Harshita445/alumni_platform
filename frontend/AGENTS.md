@@ -14,16 +14,10 @@ Last audited: 2026-06-21.
 
 ## Current Checks
 
+- `npx tsc --noEmit` passes.
 - `npm run lint` passes with one warning about raw `<img>` in `src/app/page.tsx`.
-- `npx tsc --noEmit` fails with known type errors.
-- `npm run build` fails in this workspace because Next infers `C:\Users\hp` as root and hits access restrictions.
-- `npm run build -- --webpack` also hits blocked Google font fetching plus root/readlink issues.
-
-## Known Type Errors To Fix First
-
-- `src/app/register/student/page.tsx` references undefined `setGraduationYear`.
-- `src/app/profile/page.tsx` reads `profile.profile_image`, but the stored profile type does not define it.
-- `src/lib/api.ts` assigns nullable backend profile fields into a non-nullable stored profile type.
+- `npm run build` previously failed in this workspace because Next inferred `C:\Users\hp` as root and hit access restrictions.
+- `npm run build -- --webpack` previously hit blocked Google font fetching plus root/readlink issues.
 
 ## Known Product Gaps
 

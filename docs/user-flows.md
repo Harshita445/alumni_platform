@@ -33,10 +33,6 @@ Current intended flow:
 13. Frontend saves the user/profile/token in localStorage.
 14. User is routed to `/dashboard`.
 
-Current blocker:
-
-- `register/student/page.tsx` calls `setGraduationYear`, which is not defined. TypeScript check fails.
-
 Missing:
 
 - Email verification.
@@ -155,15 +151,13 @@ Missing:
 Current flow:
 
 1. User opens `/profile/[id]`.
-2. Server component fetches `GET /alumni/{id}` without auth headers.
-3. If response is not OK, Next renders not-found.
-4. Page displays image, name, designation, company, class year, bio, branch, and LinkedIn URL.
+2. Client page requires a logged-in user.
+3. Frontend fetches `GET /alumni/{id}` with bearer auth.
+4. If response is not OK, the page shows an unavailable-profile state.
+5. Page displays image, name, designation, company, class year, bio, branch, LinkedIn URL, and a student-only booking CTA.
 
 Known issues:
 
-- Backend detail route does not check for missing profile before reading properties.
-- Detail fetch does not include bearer auth, while the alumni list route requires auth.
-- There is no booking CTA on the profile page.
 - There are no reviews shown on the profile page.
 
 ## Booking Request Flow
@@ -178,14 +172,15 @@ Current student flow:
 6. Frontend calls `POST /bookings`.
 7. Backend checks current user is a student.
 8. Backend checks selected user is alumni.
-9. Backend creates a `pending` booking.
-10. Backend creates a notification for the alumni user.
-11. Frontend stores latest booking in localStorage and routes to `/bookings/confirmation`.
+9. Backend validates the date/time format and rejects past booking times.
+10. Backend rejects active slot conflicts for the same alumni/date/time.
+11. Backend creates a `pending` booking.
+12. Backend creates a notification for the alumni user.
+13. Frontend stores latest booking in localStorage and routes to `/bookings/confirmation`.
 
 Missing:
 
 - Availability validation.
-- Conflict detection for booked slots.
 - Meeting link creation.
 - Payment.
 - Calendar integration.
@@ -218,10 +213,10 @@ Current flow:
 3. Hook refreshes saved alumni from `GET /saved/me`.
 4. `/saved` displays saved alumni using `AlumniCard`.
 
-Known issues:
+Current behavior:
 
-- Save UI appears on `AlumniCard` even when the current user is missing or alumni, but the hook no-ops for non-student users.
-- `/saved` does not display a login-required state.
+- Save UI appears only for student users.
+- `/saved` displays explicit logged-out and alumni-account states.
 
 ## Review Flow
 
@@ -242,9 +237,9 @@ Frontend missing:
 - Rating validation UI.
 - Prompt after completed session.
 
-Backend missing:
+Backend behavior:
 
-- Rating range validation.
+- Rating is validated from 1 to 5.
 
 ## Notification Flow
 

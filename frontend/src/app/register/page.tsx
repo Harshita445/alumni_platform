@@ -35,7 +35,7 @@ export default function RegisterPage() {
             lineHeight: 1.7,
           }}
         >
-          Choose how you'd like to join the community.
+          Choose how you would like to join the community.
         </p>
 
         <div
@@ -55,7 +55,7 @@ export default function RegisterPage() {
                 marginBottom: "12px",
               }}
             >
-              🎓 I'm a Student
+              Student
             </h2>
 
             <p
@@ -79,7 +79,7 @@ export default function RegisterPage() {
                 marginBottom: "12px",
               }}
             >
-              🚀 I'm an Alumni
+              Alumni
             </h2>
 
             <p

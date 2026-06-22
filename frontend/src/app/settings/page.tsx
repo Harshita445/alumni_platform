@@ -10,20 +10,26 @@ type Settings = {
 };
 
 export default function SettingsPage() {
-  const [settings, setSettings] = useState<Settings>({
-    emailNotifications: true,
-    bookingReminders: true,
-    publicProfile: true,
-    timezone: "Asia/Kolkata",
-  });
+  const [settings, setSettings] = useState<Settings>(() => {
+    const defaults = {
+      emailNotifications: true,
+      bookingReminders: true,
+      publicProfile: true,
+      timezone: "Asia/Kolkata",
+    };
 
-  useEffect(() => {
+    if (typeof window === "undefined") {
+      return defaults;
+    }
+
     const saved = localStorage.getItem("app-settings");
 
     if (saved) {
-      setSettings(JSON.parse(saved));
+      return JSON.parse(saved) as Settings;
     }
-  }, []);
+
+    return defaults;
+  });
 
   useEffect(() => {
     localStorage.setItem(

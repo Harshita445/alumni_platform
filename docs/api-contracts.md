@@ -269,7 +269,7 @@ Known gaps:
 
 ### GET /alumni/{alumni_id}
 
-Does not currently require bearer token.
+Requires bearer token.
 
 Success response:
 
@@ -286,9 +286,7 @@ Success response:
 }
 ```
 
-Known bug:
-
-- Missing alumni/profile is not handled; the route can crash by reading fields from `None`.
+Missing alumni/profile returns 404.
 
 ## Bookings
 
@@ -309,6 +307,14 @@ Response:
 Requires bearer token.
 
 Only students can create bookings.
+
+Validation:
+
+- Selected user must exist and have role `alumni`.
+- `date` must use `YYYY-MM-DD`.
+- `time` must use `HH:MM`.
+- Booking time must be in the future.
+- Existing `pending` or `upcoming` bookings block the same alumni/date/time slot.
 
 Request body:
 
@@ -343,7 +349,6 @@ Side effect:
 Known gaps:
 
 - No availability check.
-- No conflict check.
 - No meeting link.
 - No payment.
 
@@ -492,9 +497,9 @@ Success response:
 }
 ```
 
-Known gap:
+Validation:
 
-- `rating` is not validated to 1-5.
+- `rating` must be between 1 and 5.
 
 ### GET /reviews/alumni/{alumni_id}
 

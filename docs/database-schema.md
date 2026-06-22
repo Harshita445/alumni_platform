@@ -6,8 +6,8 @@ The active ORM models are SQLAlchemy models in `backend/app/models`. Tables are 
 
 ## Active Database Connection
 
-- Active connection string: `sqlite:///./app.db` from `backend/app/database.py`.
-- `backend/app/core/config.py` defines `DATABASE_URL = sqlite:///./alumni.db`, but this setting is not used by the active SQLAlchemy engine.
+- Active connection string: `sqlite:///./app.db` from `backend/app/core/config.py`.
+- `backend/app/database.py` reads `settings.DATABASE_URL` for the active SQLAlchemy engine.
 - SQLite `check_same_thread=False` is configured.
 - No Alembic migration folder is present even though Alembic is installed in `requirements.txt`.
 
@@ -90,6 +90,7 @@ Important behavior:
 - Students create bookings.
 - Alumni accept/reject/complete bookings.
 - Students cancel bookings.
+- Booking creation rejects past date/time values and active conflicts for the same alumni/date/time.
 - There is no availability table, no meeting link column, no price column, and no payment table.
 
 ## saved_alumni
@@ -147,7 +148,7 @@ Defined in `backend/app/models/review.py`.
 | `booking_id` | Integer | Required, foreign key to `bookings.id` |
 | `student_id` | Integer | Required, foreign key to `users.id` |
 | `alumni_id` | Integer | Required, foreign key to `users.id` |
-| `rating` | Integer | Required; route currently does not enforce 1-5 |
+| `rating` | Integer | Required; route enforces 1-5 |
 | `comment` | String | Nullable |
 | `created_at` | DateTime | Server default `now()` |
 
@@ -168,11 +169,10 @@ Relationships:
 ## Schema Work Left
 
 - Decide whether to keep a single `profiles` table or split student/alumni-specific profile tables.
-- Use `settings.DATABASE_URL` in `database.py`.
 - Add migrations before production data exists.
 - Use real date/time types for booking scheduling or document the string format strictly.
 - Add availability tables if alumni should manage bookable slots.
 - Add meeting links if sessions are conducted inside external meeting tools.
 - Add payment/pricing tables only if paid sessions are in scope.
-- Add review rating constraints at model and route level.
+- Add review rating constraints at model level.
 - Decide whether `is_verified` should be enforced and add verification token storage if needed.
