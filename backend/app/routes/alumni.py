@@ -30,11 +30,10 @@ def get_alumni(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    if page < 1 or limit < 1:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Page and limit must be >= 1",
-        )
+    if page < 1:
+        page = 1
+    if limit < 1:
+        limit = 10
     
     query = (
         db.query(Profile)

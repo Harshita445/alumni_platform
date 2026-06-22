@@ -108,12 +108,16 @@ def get_saved_alumni(
 
         if profile:
             response.append(
-                {
-                    "id": profile.user_id,
-                    "full_name": profile.full_name,
-                    "company": profile.company,
-                    "designation": profile.designation,
-                }
+                SavedAlumniResponse(
+                    id=profile.user_id,
+                    full_name=profile.full_name,
+                    branch=profile.branch,
+                    graduation_year=profile.graduation_year,
+                    company=profile.company,
+                    designation=profile.designation,
+                    bio=profile.bio,
+                    linkedin_url=profile.linkedin_url,
+                )
             )
 
     return response

@@ -2,9 +2,6 @@ from fastapi import APIRouter
 from fastapi import Depends
 from fastapi import HTTPException
 
-from pydantic import BaseModel
-from pydantic import Field
-
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -14,6 +11,7 @@ from app.models.booking import Booking
 from app.models.notification import Notification
 from app.models.review import Review
 from app.models.user import User
+from app.schemas.review import ReviewCreate, ReviewResponse
 
 router = APIRouter(
     prefix="/reviews",
@@ -21,13 +19,7 @@ router = APIRouter(
 )
 
 
-class ReviewCreate(BaseModel):
-    booking_id: int
-    rating: int = Field(ge=1, le=5)
-    comment: str | None = None
-
-
-@router.post("/")
+@router.post("/", response_model={"message": str})
 def create_review(
     payload: ReviewCreate,
     db: Session = Depends(get_db),
@@ -96,7 +88,7 @@ def create_review(
     return {"message": "Review submitted"}
     
 
-@router.get("/alumni/{alumni_id}")
+@router.get("/alumni/{alumni_id}", response_model=list[ReviewResponse])
 def get_reviews(
     alumni_id: int,
     db: Session = Depends(get_db),

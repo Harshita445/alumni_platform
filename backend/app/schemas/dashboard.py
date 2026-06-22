@@ -1,11 +1,12 @@
+from datetime import date, time
 from pydantic import BaseModel
 
 
 class RecentBooking(BaseModel):
     id: int
     name: str
-    date: str
-    time: str
+    date: date
+    time: time
     status: str
 
     model_config = {
