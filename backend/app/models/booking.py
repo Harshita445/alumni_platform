@@ -1,6 +1,6 @@
 from enum import Enum
 
-from sqlalchemy import Column, DateTime, ForeignKey, Integer, String
+from sqlalchemy import Column, DateTime, Date, Time, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
@@ -22,8 +22,8 @@ class Booking(Base):
     student_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     alumni_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     session_type = Column(String, nullable=False)
-    date = Column(String, nullable=False)
-    time = Column(String, nullable=False)
+    date = Column(Date, nullable=False)
+    time = Column(Time, nullable=False)
     status = Column(
         String,
         nullable=False,

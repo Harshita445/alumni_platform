@@ -114,6 +114,12 @@ def login(
             detail="Invalid credentials",
         )
 
+    if not user.is_verified:
+        raise HTTPException(
+            status_code=403,
+            detail="Email not verified. Please verify your email before logging in.",
+        )
+
     if not verify_password(
         form_data.password,
         user.hashed_password,

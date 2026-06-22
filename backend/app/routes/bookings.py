@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date, time
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
@@ -42,11 +42,8 @@ def _create_notification(
     db.add(notification)
 
 
-def _booking_window(date_value: str, time_value: str):
-    booking_start = datetime.strptime(
-        f"{date_value} {time_value}",
-        "%Y-%m-%d %H:%M",
-    )
+def _booking_window(date_value: date, time_value: time):
+    booking_start = datetime.combine(date_value, time_value)
     booking_end = booking_start + timedelta(minutes=BOOKING_DURATION_MINUTES)
 
     return booking_start, booking_end
@@ -92,7 +89,7 @@ def _has_overlapping_booking(
     active_bookings = (
         db.query(Booking)
         .filter(Booking.alumni_id == alumni_id)
-        .filter(Booking.date == requested_start.strftime("%Y-%m-%d"))
+        .filter(Booking.date == requested_start.date())
         .filter(
             Booking.status.in_(
                 [

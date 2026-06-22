@@ -12,6 +12,11 @@ class Settings(BaseSettings):
 
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
 
+    PASSWORD_MIN_LENGTH: int = 8
+    PASSWORD_REQUIRE_UPPERCASE: bool = True
+    PASSWORD_REQUIRE_NUMBERS: bool = True
+    PASSWORD_REQUIRE_SPECIAL: bool = True
+
     class Config:
         env_file = ".env"
 

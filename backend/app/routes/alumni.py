@@ -21,6 +21,8 @@ router = APIRouter(
     response_model=list[AlumniResponse],
 )
 def get_alumni(
+    page: int = 1,
+    limit: int = 10,
     company: Optional[str] = None,
     branch: Optional[str] = None,
     graduation_year: Optional[int] = None,
@@ -28,6 +30,12 @@ def get_alumni(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    if page < 1 or limit < 1:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Page and limit must be >= 1",
+        )
+    
     query = (
         db.query(Profile)
         .join(User)
@@ -58,8 +66,9 @@ def get_alumni(
                 Profile.bio.ilike(f"%{search}%"),
             )
         )
-
-    profiles = query.all()
+    
+    offset = (page - 1) * limit
+    profiles = query.offset(offset).limit(limit).all()
 
     return [
         {
