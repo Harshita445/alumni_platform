@@ -7,7 +7,12 @@ import type React from "react";
 import { useEffect, useState } from "react";
 
 import { useAuth } from "@/hooks/useAuth";
-import { Alumni, fetchAlumniDetails } from "@/lib/api";
+import {
+  Alumni,
+  Review,
+  fetchAlumniDetails,
+  fetchAlumniReviews,
+} from "@/lib/api";
 
 const FALLBACK_IMAGE =
   "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=400&q=80";
@@ -16,8 +21,11 @@ export default function ProfilePage() {
   const params = useParams<{ id: string }>();
   const { user } = useAuth();
   const [alumni, setAlumni] = useState<Alumni | null>(null);
+  const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(Boolean(user));
+  const [reviewsLoading, setReviewsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [reviewsError, setReviewsError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user || !params.id) {
@@ -37,6 +45,34 @@ export default function ProfilePage() {
 
         if (active) {
           setAlumni(result);
+        }
+
+        if (active) {
+          setReviewsLoading(true);
+          setReviewsError(null);
+        }
+
+        try {
+          const reviewResult = await fetchAlumniReviews(
+            params.id,
+            user.access_token
+          );
+
+          if (active) {
+            setReviews(reviewResult);
+          }
+        } catch (reviewErr: unknown) {
+          if (active) {
+            setReviewsError(
+              reviewErr instanceof Error
+                ? reviewErr.message
+                : "Unable to load reviews."
+            );
+          }
+        } finally {
+          if (active) {
+            setReviewsLoading(false);
+          }
         }
       } catch (err: unknown) {
         if (active) {
@@ -96,6 +132,13 @@ export default function ProfilePage() {
   }
 
   const displayName = alumni.full_name || "Alumnus";
+  const averageRating =
+    reviews.length > 0
+      ? reviews.reduce(
+          (total, review) => total + review.rating,
+          0
+        ) / reviews.length
+      : null;
 
   return (
     <main style={mainStyle}>
@@ -115,6 +158,20 @@ export default function ProfilePage() {
         <h1 style={{ marginBottom: "12px" }}>
           {displayName}
         </h1>
+
+        <p
+          style={{
+            color: "var(--accent)",
+            fontWeight: 600,
+            marginBottom: "12px",
+          }}
+        >
+          {averageRating
+            ? `${averageRating.toFixed(1)} / 5 from ${reviews.length} review${
+                reviews.length === 1 ? "" : "s"
+              }`
+            : "No reviews yet"}
+        </p>
 
         <p
           style={{
@@ -183,6 +240,71 @@ export default function ProfilePage() {
           ) : null}
         </div>
       </div>
+
+      <section
+        style={{
+          ...cardStyle,
+          marginTop: "24px",
+        }}
+      >
+        <h2 style={{ marginBottom: "16px" }}>Reviews</h2>
+
+        {reviewsLoading ? (
+          <p style={{ color: "var(--text-secondary)" }}>
+            Loading reviews...
+          </p>
+        ) : reviewsError ? (
+          <p style={{ color: "var(--danger)" }}>
+            {reviewsError}
+          </p>
+        ) : reviews.length === 0 ? (
+          <p style={{ color: "var(--text-secondary)" }}>
+            No student reviews have been submitted yet.
+          </p>
+        ) : (
+          <div style={{ display: "grid", gap: "16px" }}>
+            {reviews.map((review) => (
+              <article
+                key={review.id}
+                style={{
+                  borderTop: "1px solid var(--border)",
+                  paddingTop: "16px",
+                }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    gap: "16px",
+                    flexWrap: "wrap",
+                    marginBottom: "8px",
+                  }}
+                >
+                  <strong>{review.rating} / 5</strong>
+                  <span style={{ color: "var(--text-secondary)" }}>
+                    Student #{review.student_id}
+                  </span>
+                </div>
+
+                {review.comment ? (
+                  <p
+                    style={{
+                      color: "var(--text-secondary)",
+                      lineHeight: 1.7,
+                    }}
+                  >
+                    {review.comment}
+                  </p>
+                ) : (
+                  <p style={{ color: "var(--text-secondary)" }}>
+                    No comment provided.
+                  </p>
+                )}
+              </article>
+            ))}
+          </div>
+        )}
+      </section>
     </main>
   );
 }

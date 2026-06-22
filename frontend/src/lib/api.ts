@@ -47,6 +47,16 @@ export type Booking = {
   created_at?: string | null;
 };
 
+export type Review = {
+  id: number;
+  booking_id: number;
+  student_id: number;
+  alumni_id: number;
+  rating: number;
+  comment?: string | null;
+  created_at?: string | null;
+};
+
 export type StoredUser = {
   id: number;
   email: string;
@@ -323,6 +333,30 @@ export async function updateBookingStatus(
     method: "PATCH",
     headers: getAuthHeaders(token),
     body: JSON.stringify({ status }),
+  });
+}
+
+export async function submitReview(
+  token: string,
+  data: {
+    booking_id: number;
+    rating: number;
+    comment?: string;
+  }
+): Promise<{ message: string }> {
+  return request("/reviews/", {
+    method: "POST",
+    headers: getAuthHeaders(token),
+    body: JSON.stringify(data),
+  });
+}
+
+export async function fetchAlumniReviews(
+  alumniId: string | number,
+  token?: string
+): Promise<Review[]> {
+  return request(`/reviews/alumni/${alumniId}`, {
+    headers: token ? getAuthHeaders(token) : undefined,
   });
 }
 

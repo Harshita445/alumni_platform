@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
+import BookingManagement from "@/components/BookingManagement";
 import { useAuth } from "@/hooks/useAuth";
 import { Alumni, createBooking, fetchAlumni } from "@/lib/api";
 
@@ -25,6 +26,27 @@ const inputStyle = {
 };
 
 export default function BookingPage() {
+  return (
+    <Suspense
+      fallback={
+        <main
+          style={{
+            maxWidth: "700px",
+            margin: "0 auto",
+            padding: "48px 24px 80px",
+            color: "var(--text-secondary)",
+          }}
+        >
+          Loading bookings...
+        </main>
+      }
+    >
+      <BookingPageContent />
+    </Suspense>
+  );
+}
+
+function BookingPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user } = useAuth();
@@ -166,35 +188,13 @@ export default function BookingPage() {
     );
   }
 
-  if (user.role !== "student") {
-    return (
-      <main
-        style={{
-          maxWidth: "600px",
-          margin: "80px auto",
-          padding: "40px 24px",
-          textAlign: "center",
-        }}
-      >
-        <h1 style={{ marginBottom: "16px" }}>
-          Alumni cannot book sessions
-        </h1>
-
-        <p
-          style={{
-            color: "var(--text-secondary)",
-          }}
-        >
-          Only students can request mentorship sessions.
-        </p>
-      </main>
-    );
-  }
-
   return (
     <main
       style={{
-        maxWidth: "700px",
+        maxWidth:
+          user.role === "student"
+            ? "900px"
+            : "var(--container-width)",
         margin: "0 auto",
         padding: "48px 24px 80px",
       }}
@@ -210,7 +210,9 @@ export default function BookingPage() {
             marginBottom: "12px",
           }}
         >
-          Book a Session
+          {user.role === "student"
+            ? "Book a Session"
+            : "My Bookings"}
         </h1>
 
         <p
@@ -218,132 +220,137 @@ export default function BookingPage() {
             color: "var(--text-secondary)",
           }}
         >
-          Schedule time with an alumnus for guidance,
-          networking, or interview preparation.
+          {user.role === "student"
+            ? "Schedule time with an alumnus for guidance, networking, or interview preparation."
+            : "Manage incoming session requests and update active bookings."}
         </p>
       </div>
 
-      <div
-        style={{
-          background: "var(--surface)",
-          border: "1px solid var(--border)",
-          borderRadius: "var(--radius-lg)",
-          padding: "32px",
-          boxShadow: "var(--shadow-sm)",
-          display: "flex",
-          flexDirection: "column",
-          gap: "24px",
-        }}
-      >
-        {loading ? (
-          <p>Loading available alumni...</p>
-        ) : null}
-
-        <div>
-          <label style={labelStyle}>
-            Choose an Alumnus
-          </label>
-
-          <select
-            value={alumniId}
-            onChange={(e) =>
-              setAlumniId(e.target.value)
-            }
-            style={inputStyle}
-          >
-            {alumni.map((alumnus) => (
-              <option
-                key={alumnus.id}
-                value={alumnus.id}
-              >
-                {alumnus.full_name || "Alumnus"} -{" "}
-                {alumnus.company || "Independent"}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div>
-          <label style={labelStyle}>
-            Session Type
-          </label>
-
-          <select
-            value={sessionType}
-            onChange={(e) =>
-              setSessionType(e.target.value)
-            }
-            style={inputStyle}
-          >
-            <option>Resume Review</option>
-            <option>Mock Interview</option>
-            <option>Career Guidance</option>
-            <option>Networking Chat</option>
-          </select>
-        </div>
-
-        <div>
-          <label style={labelStyle}>
-            Select Date
-          </label>
-
-          <input
-            type="date"
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-            style={inputStyle}
-          />
-        </div>
-
-        <div>
-          <label style={labelStyle}>
-            Select Time
-          </label>
-
-          <input
-            type="time"
-            value={time}
-            onChange={(e) => setTime(e.target.value)}
-            style={inputStyle}
-          />
-        </div>
-
-        {error ? (
-          <p
-            style={{
-              color: "var(--danger)",
-              margin: 0,
-            }}
-          >
-            {error}
-          </p>
-        ) : null}
-
-        <button
-          disabled={
-            !alumniId || !date || !time || isSubmitting
-          }
-          onClick={handleConfirm}
+      {user.role === "student" ? (
+        <div
           style={{
-            background:
-              !alumniId || !date || !time || isSubmitting
-                ? "var(--border)"
-                : "var(--primary)",
-            color: "#fff",
-            border: "none",
-            borderRadius: "var(--radius-md)",
-            padding: "16px",
-            cursor:
-              !alumniId || !date || !time || isSubmitting
-                ? "not-allowed"
-                : "pointer",
-            fontSize: "16px",
-            fontWeight: 600,
+            background: "var(--surface)",
+            border: "1px solid var(--border)",
+            borderRadius: "var(--radius-lg)",
+            padding: "32px",
+            boxShadow: "var(--shadow-sm)",
+            display: "flex",
+            flexDirection: "column",
+            gap: "24px",
           }}
         >
-          {isSubmitting ? "Booking..." : "Confirm Booking"}
-        </button>
-      </div>
+          {loading ? (
+            <p>Loading available alumni...</p>
+          ) : null}
+
+          <div>
+            <label style={labelStyle}>
+              Choose an Alumnus
+            </label>
+
+            <select
+              value={alumniId}
+              onChange={(e) =>
+                setAlumniId(e.target.value)
+              }
+              style={inputStyle}
+            >
+              {alumni.map((alumnus) => (
+                <option
+                  key={alumnus.id}
+                  value={alumnus.id}
+                >
+                  {alumnus.full_name || "Alumnus"} -{" "}
+                  {alumnus.company || "Independent"}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label style={labelStyle}>
+              Session Type
+            </label>
+
+            <select
+              value={sessionType}
+              onChange={(e) =>
+                setSessionType(e.target.value)
+              }
+              style={inputStyle}
+            >
+              <option>Resume Review</option>
+              <option>Mock Interview</option>
+              <option>Career Guidance</option>
+              <option>Networking Chat</option>
+            </select>
+          </div>
+
+          <div>
+            <label style={labelStyle}>
+              Select Date
+            </label>
+
+            <input
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              style={inputStyle}
+            />
+          </div>
+
+          <div>
+            <label style={labelStyle}>
+              Select Time
+            </label>
+
+            <input
+              type="time"
+              value={time}
+              onChange={(e) => setTime(e.target.value)}
+              style={inputStyle}
+            />
+          </div>
+
+          {error ? (
+            <p
+              style={{
+                color: "var(--danger)",
+                margin: 0,
+              }}
+            >
+              {error}
+            </p>
+          ) : null}
+
+          <button
+            disabled={
+              !alumniId || !date || !time || isSubmitting
+            }
+            onClick={handleConfirm}
+            style={{
+              background:
+                !alumniId || !date || !time || isSubmitting
+                  ? "var(--border)"
+                  : "var(--primary)",
+              color: "#fff",
+              border: "none",
+              borderRadius: "var(--radius-md)",
+              padding: "16px",
+              cursor:
+                !alumniId || !date || !time || isSubmitting
+                  ? "not-allowed"
+                  : "pointer",
+              fontSize: "16px",
+              fontWeight: 600,
+            }}
+          >
+            {isSubmitting ? "Booking..." : "Confirm Booking"}
+          </button>
+        </div>
+      ) : null}
+
+      <BookingManagement user={user} />
     </main>
   );
 }

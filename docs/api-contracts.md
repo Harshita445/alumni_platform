@@ -1,6 +1,6 @@
 # API Contracts
 
-Last audited: 2026-06-21.
+Last audited: 2026-06-22.
 
 The active backend is a FastAPI app in `backend/app/main.py`. Routes are mounted directly on the app. There is currently no `/api/v1` prefix.
 
@@ -314,7 +314,10 @@ Validation:
 - `date` must use `YYYY-MM-DD`.
 - `time` must use `HH:MM`.
 - Booking time must be in the future.
-- Existing `pending` or `upcoming` bookings block the same alumni/date/time slot.
+- Selected time must fit inside an alumni availability slot.
+- Availability can match either the specific selected date or the selected weekday.
+- Bookings are treated as 30-minute sessions for availability and overlap validation.
+- Existing `pending` or `upcoming` bookings block overlapping intervals for the same alumni/date.
 
 Request body:
 
@@ -348,7 +351,6 @@ Side effect:
 
 Known gaps:
 
-- No availability check.
 - No meeting link.
 - No payment.
 
@@ -411,6 +413,90 @@ Rules:
 Side effects:
 
 - Status changes create notifications for the other party.
+
+## Availability
+
+Routes defined in `backend/app/routes/availability.py`.
+
+### POST /availability/
+
+Requires bearer token.
+
+Only alumni can create availability slots. A slot must use exactly one of `day_of_week` or `date`.
+
+Request body for weekly availability:
+
+```json
+{
+  "day_of_week": 0,
+  "start_time": "14:00",
+  "end_time": "16:00"
+}
+```
+
+Request body for date-specific availability:
+
+```json
+{
+  "date": "2026-06-24",
+  "start_time": "14:00",
+  "end_time": "16:00"
+}
+```
+
+Validation:
+
+- `day_of_week` must be 0-6, where Python weekday semantics apply: Monday is 0 and Sunday is 6.
+- `date` uses Pydantic date parsing, normally `YYYY-MM-DD`.
+- `start_time` and `end_time` use Pydantic time parsing, normally `HH:MM` or `HH:MM:SS`.
+- `start_time` must be before `end_time`.
+- Exactly one of `day_of_week` or `date` must be present.
+
+Success response:
+
+```json
+{
+  "id": 1,
+  "alumni_id": 2,
+  "day_of_week": 0,
+  "date": null,
+  "start_time": "14:00:00",
+  "end_time": "16:00:00"
+}
+```
+
+### GET /availability/{alumni_id}
+
+Requires bearer token.
+
+Returns availability slots for an alumni user. Missing or non-alumni users return 404.
+
+Response:
+
+```json
+[
+  {
+    "id": 1,
+    "alumni_id": 2,
+    "day_of_week": 0,
+    "date": null,
+    "start_time": "14:00:00",
+    "end_time": "16:00:00"
+  }
+]
+```
+
+### DELETE /availability/{availability_id}
+
+Requires bearer token.
+
+Only the owner alumni can delete their own slot.
+
+Success response:
+
+```text
+204 No Content
+```
 
 ## Saved Alumni
 
@@ -500,12 +586,35 @@ Success response:
 Validation:
 
 - `rating` must be between 1 and 5.
+- The current user must be the booking student.
+- The booking must be completed.
+- Duplicate reviews for the same `booking_id` are rejected.
+
+Side effect:
+
+- Creates a notification for the alumni user.
 
 ### GET /reviews/alumni/{alumni_id}
 
 Returns all reviews for an alumni user.
 
 Response shape is raw ORM-shaped JSON from FastAPI serialization, not a dedicated response schema.
+
+Typical response:
+
+```json
+[
+  {
+    "id": 1,
+    "booking_id": 1,
+    "student_id": 1,
+    "alumni_id": 2,
+    "rating": 5,
+    "comment": "Helpful session.",
+    "created_at": "2026-06-21T12:00:00"
+  }
+]
+```
 
 ## Dashboard
 
@@ -615,7 +724,6 @@ Response:
 - `POST /auth/verify-email`.
 - `GET /users/me`.
 - `/colleges`.
-- Alumni availability endpoints.
 - Admin endpoints.
 - Payment endpoints.
 - Meeting-link endpoints.

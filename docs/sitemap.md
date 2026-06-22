@@ -1,6 +1,6 @@
 # Sitemap And Route Inventory
 
-Last audited: 2026-06-21.
+Last audited: 2026-06-22.
 
 This file lists active frontend pages and backend routes found in the current codebase.
 
@@ -15,13 +15,13 @@ Routes are under `frontend/src/app`.
 | `/register` | `register/page.tsx` | Implemented role choice page |
 | `/register/student` | `register/student/page.tsx` | Implemented; persists full name and derived graduation year |
 | `/register/alumni` | `register/alumni/page.tsx` | Implemented; live backend registration/profile update |
-| `/dashboard` | `dashboard/page.tsx` | Implemented; live backend dashboard data |
+| `/dashboard` | `dashboard/page.tsx` | Implemented; live backend dashboard data with link to booking management |
 | `/search` | `search/page.tsx` | Implemented; live backend alumni fetch and client-side filters |
 | `/search/loading` | `search/loading.tsx` | Implemented loading UI |
 | `/profile` | `profile/page.tsx` | Implemented current-user profile from local auth storage; has TypeScript issue around `profile_image` |
-| `/profile/[id]` | `profile/[id]/page.tsx` | Implemented alumni profile detail; client fetches backend with bearer auth |
+| `/profile/[id]` | `profile/[id]/page.tsx` | Implemented alumni profile detail; fetches alumni details and reviews with bearer auth |
 | `/profile/[id]/loading` | `profile/[id]/loading.tsx` | Implemented loading UI |
-| `/bookings` | `bookings/page.tsx` | Implemented student booking creation |
+| `/bookings` | `bookings/page.tsx` | Implemented student booking creation plus current-user booking management |
 | `/bookings/confirmation` | `bookings/confirmation/page.tsx` | Implemented localStorage confirmation page |
 | `/saved` | `saved/page.tsx` | Implemented saved alumni display through backend hook |
 | `/settings` | `settings/page.tsx` | Implemented local-only settings |
@@ -82,6 +82,12 @@ Routes are mounted directly on the FastAPI app. There is currently no `/api/v1` 
 - `GET /bookings/{booking_id}`
 - `PATCH /bookings/{booking_id}`
 
+### Availability
+
+- `POST /availability/`
+- `GET /availability/{alumni_id}`
+- `DELETE /availability/{availability_id}`
+
 ### Saved Alumni
 
 - `POST /saved/{alumni_id}`
@@ -116,7 +122,6 @@ Frontend:
 - `/admin/users`
 - `/admin/reports`
 - A dedicated notifications page.
-- A dedicated review submission page.
 - A booking detail page.
 
 Backend:
@@ -124,7 +129,6 @@ Backend:
 - `/api/v1/...` prefixed routes.
 - `/users/me`; current route is `/auth/me`.
 - `/colleges`.
-- `/alumni/{alumni_id}/availability`.
 - `/bookings/{booking_id}/cancel`; current route is generic `PATCH /bookings/{booking_id}`.
 - `/alumni/{alumni_id}/reviews`; current route is `/reviews/alumni/{alumni_id}`.
 - `/admin/users`.
@@ -138,6 +142,5 @@ Backend:
 - Decide whether to add an `/api/v1` prefix or keep direct routes.
 - Align frontend route naming for alumni detail: `/profile/[id]` vs `/alumni/[id]`.
 - Add navigation links for saved alumni, settings, onboarding, and notifications if they remain part of the product.
-- Add frontend routes for booking management and reviews.
+- Add frontend availability management if alumni should self-serve scheduling.
 - Add backend admin routes only if admin role is introduced.
-- Add backend availability routes if alumni scheduling should be slot-based.

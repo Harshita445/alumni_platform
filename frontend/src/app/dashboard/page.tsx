@@ -3,15 +3,16 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
+import Badge from "@/components/Badge";
 import { useAuth } from "@/hooks/useAuth";
-import { fetchDashboard } from "@/lib/api";
+import { BookingStatus, fetchDashboard } from "@/lib/api";
 
 type RecentBooking = {
   id: number;
   name: string;
   date: string;
   time: string;
-  status: string;
+  status: BookingStatus;
 };
 
 type DashboardData = {
@@ -209,6 +210,19 @@ export default function DashboardPage() {
               }}
             >
               <h2>Recent Bookings</h2>
+              <button
+                onClick={() => router.push("/bookings")}
+                style={{
+                  background: "var(--surface)",
+                  color: "var(--text-primary)",
+                  border: "1px solid var(--border)",
+                  borderRadius: "var(--radius-md)",
+                  padding: "10px 16px",
+                  cursor: "pointer",
+                }}
+              >
+                Manage Bookings
+              </button>
             </div>
 
             {dashboard.recent_bookings.length === 0 ? (
@@ -259,14 +273,10 @@ export default function DashboardPage() {
                           {booking.date} · {booking.time}
                         </p>
                       </div>
-                      <span
-                        style={{
-                          textTransform: "capitalize",
-                          color: "var(--accent)",
-                        }}
-                      >
-                        {booking.status}
-                      </span>
+                      <Badge
+                        text={booking.status}
+                        tone={booking.status}
+                      />
                     </div>
                   </div>
                 ))}

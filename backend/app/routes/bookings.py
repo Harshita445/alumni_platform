@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app.dependencies.auth import get_current_user
+from app.models.availability import Availability
 from app.models.booking import Booking, BookingStatus
 from app.models.notification import Notification
 from app.models.user import User
@@ -19,6 +20,8 @@ router = APIRouter(
     prefix="/bookings",
     tags=["Bookings"],
 )
+
+BOOKING_DURATION_MINUTES = 30
 
 
 class BookingStatusUpdate(BaseModel):
@@ -37,6 +40,80 @@ def _create_notification(
         message=message,
     )
     db.add(notification)
+
+
+def _booking_window(date_value: str, time_value: str):
+    booking_start = datetime.strptime(
+        f"{date_value} {time_value}",
+        "%Y-%m-%d %H:%M",
+    )
+    booking_end = booking_start + timedelta(minutes=BOOKING_DURATION_MINUTES)
+
+    return booking_start, booking_end
+
+
+def _has_matching_availability(
+    db: Session,
+    alumni_id: int,
+    booking_start: datetime,
+    booking_end: datetime,
+):
+    if booking_start.date() != booking_end.date():
+        return False
+
+    requested_date = booking_start.date()
+    requested_day = requested_date.weekday()
+    requested_start_time = booking_start.time()
+    requested_end_time = booking_end.time()
+
+    availability = (
+        db.query(Availability)
+        .filter(Availability.alumni_id == alumni_id)
+        .filter(
+            or_(
+                Availability.date == requested_date,
+                Availability.day_of_week == requested_day,
+            )
+        )
+        .filter(Availability.start_time <= requested_start_time)
+        .filter(Availability.end_time >= requested_end_time)
+        .first()
+    )
+
+    return availability is not None
+
+
+def _has_overlapping_booking(
+    db: Session,
+    alumni_id: int,
+    requested_start: datetime,
+    requested_end: datetime,
+):
+    active_bookings = (
+        db.query(Booking)
+        .filter(Booking.alumni_id == alumni_id)
+        .filter(Booking.date == requested_start.strftime("%Y-%m-%d"))
+        .filter(
+            Booking.status.in_(
+                [
+                    BookingStatus.PENDING.value,
+                    BookingStatus.UPCOMING.value,
+                ]
+            )
+        )
+        .all()
+    )
+
+    for booking in active_bookings:
+        existing_start, existing_end = _booking_window(
+            booking.date,
+            booking.time,
+        )
+
+        if existing_start < requested_end and requested_start < existing_end:
+            return True
+
+    return False
 
 
 @router.get("/health")
@@ -69,9 +146,9 @@ def create_booking(
             detail="Alumnus not found.",
         )
 
-    requested_start = datetime.strptime(
-        f"{payload.date} {payload.time}",
-        "%Y-%m-%d %H:%M",
+    requested_start, requested_end = _booking_window(
+        payload.date,
+        payload.time,
     )
 
     if requested_start <= datetime.now():
@@ -80,26 +157,26 @@ def create_booking(
             detail="Booking time must be in the future.",
         )
 
-    conflicting_booking = (
-        db.query(Booking)
-        .filter(Booking.alumni_id == payload.alumni_id)
-        .filter(Booking.date == payload.date)
-        .filter(Booking.time == payload.time)
-        .filter(
-            Booking.status.in_(
-                [
-                    BookingStatus.PENDING.value,
-                    BookingStatus.UPCOMING.value,
-                ]
-            )
+    if not _has_matching_availability(
+        db,
+        alumni_id=payload.alumni_id,
+        booking_start=requested_start,
+        booking_end=requested_end,
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Selected time is not within alumni availability.",
         )
-        .first()
-    )
 
-    if conflicting_booking is not None:
+    if _has_overlapping_booking(
+        db,
+        alumni_id=payload.alumni_id,
+        requested_start=requested_start,
+        requested_end=requested_end,
+    ):
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
-            detail="This alumni slot is already requested or booked.",
+            detail="This alumni slot overlaps an existing booking.",
         )
 
     booking = Booking(

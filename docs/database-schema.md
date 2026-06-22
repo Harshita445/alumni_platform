@@ -1,6 +1,6 @@
 # Database Schema
 
-Last audited: 2026-06-21.
+Last audited: 2026-06-22.
 
 The active ORM models are SQLAlchemy models in `backend/app/models`. Tables are created by `Base.metadata.create_all(bind=engine)` in `backend/app/main.py`.
 
@@ -28,6 +28,7 @@ Relationships:
 
 - One-to-one `profile` relationship to `profiles`.
 - Booking relationships are effectively supplied by `Booking.student` and `Booking.alumni` backrefs.
+- Availability slots are supplied by the `Availability.alumni` backref `availability_slots`.
 - `student_bookings` and `alumni_bookings` relationship declarations appear at module level in `user.py`, not inside the `User` class, so they do not define class attributes there.
 
 ## profiles
@@ -90,8 +91,42 @@ Important behavior:
 - Students create bookings.
 - Alumni accept/reject/complete bookings.
 - Students cancel bookings.
-- Booking creation rejects past date/time values and active conflicts for the same alumni/date/time.
-- There is no availability table, no meeting link column, no price column, and no payment table.
+- Booking creation rejects past date/time values.
+- Booking creation requires a matching alumni availability slot.
+- Booking creation treats sessions as 30 minutes when checking availability and conflicts.
+- Booking creation rejects active overlapping `pending` or `upcoming` bookings for the same alumni/date.
+- There is no meeting link column, no price column, and no payment table.
+
+## availability
+
+Defined in `backend/app/models/availability.py`.
+
+| Column | Type | Constraints / Notes |
+| --- | --- | --- |
+| `id` | Integer | Primary key, indexed |
+| `alumni_id` | Integer | Required, indexed, foreign key to `users.id` |
+| `day_of_week` | Integer | Nullable; 0-6 when present, Monday is 0 |
+| `date` | Date | Nullable; date-specific availability |
+| `start_time` | Time | Required |
+| `end_time` | Time | Required |
+
+Constraints:
+
+- `ck_availability_day_or_date`: exactly one of `day_of_week` or `date` must be present.
+- `ck_availability_day_of_week_range`: `day_of_week` must be between 0 and 6 when present.
+- `ck_availability_time_order`: `start_time` must be before `end_time`.
+
+Relationships:
+
+- `alumni` points to `User` through `alumni_id`.
+- Backref creates `availability_slots` on `User`.
+
+Important behavior:
+
+- Only alumni users can create availability slots through the route layer.
+- Any authenticated user can read an alumni user's slots.
+- Only the owner alumni can delete their slots.
+- Booking validation checks both date-specific slots and weekly `day_of_week` slots.
 
 ## saved_alumni
 
@@ -171,7 +206,7 @@ Relationships:
 - Decide whether to keep a single `profiles` table or split student/alumni-specific profile tables.
 - Add migrations before production data exists.
 - Use real date/time types for booking scheduling or document the string format strictly.
-- Add availability tables if alumni should manage bookable slots.
+- Consider migrating bookings from string `date`/`time` columns to real Date/Time columns.
 - Add meeting links if sessions are conducted inside external meeting tools.
 - Add payment/pricing tables only if paid sessions are in scope.
 - Add review rating constraints at model level.

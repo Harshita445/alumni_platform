@@ -1,6 +1,6 @@
 # User Flows
 
-Last audited: 2026-06-21.
+Last audited: 2026-06-22.
 
 This file describes the current user journeys supported by the codebase and the gaps that still block a complete production workflow.
 
@@ -61,7 +61,7 @@ Missing:
 - Proof of graduation or employment.
 - Admin approval flow.
 - Profile photo upload.
-- Availability setup.
+- Availability setup UI.
 
 ## Login Flow
 
@@ -93,11 +93,10 @@ Current flow:
 2. Frontend calls `GET /dashboard/student`.
 3. Backend returns counts for pending requests, upcoming sessions, completed sessions, saved alumni, and recent bookings.
 4. Frontend renders stat cards and recent booking cards.
+5. The recent bookings section links to `/bookings` for booking management.
 
 Missing:
 
-- Quick actions for each booking.
-- Review prompt for completed sessions.
 - Notification summary.
 - Empty-state links to search/book.
 
@@ -109,12 +108,11 @@ Current flow:
 2. Frontend calls `GET /dashboard/alumni`.
 3. Backend returns counts for pending requests, upcoming sessions, completed sessions, total students helped, and recent bookings.
 4. Frontend renders stat cards and recent booking cards.
+5. The recent bookings section links to `/bookings` for booking management.
 
 Missing:
 
-- Accept/reject controls for pending requests.
-- Complete-session controls for upcoming sessions.
-- Availability management.
+- Availability management UI.
 - Notification summary.
 
 ## Alumni Search Flow
@@ -153,12 +151,10 @@ Current flow:
 1. User opens `/profile/[id]`.
 2. Client page requires a logged-in user.
 3. Frontend fetches `GET /alumni/{id}` with bearer auth.
-4. If response is not OK, the page shows an unavailable-profile state.
-5. Page displays image, name, designation, company, class year, bio, branch, LinkedIn URL, and a student-only booking CTA.
-
-Known issues:
-
-- There are no reviews shown on the profile page.
+4. Frontend fetches `GET /reviews/alumni/{id}` with bearer auth.
+5. If the alumni response is not OK, the page shows an unavailable-profile state.
+6. Page displays image, name, designation, company, class year, bio, branch, LinkedIn URL, average rating, review list, and a student-only booking CTA.
+7. Review loading and error states are handled separately from alumni profile loading.
 
 ## Booking Request Flow
 
@@ -166,21 +162,23 @@ Current student flow:
 
 1. Student opens `/bookings`.
 2. Frontend blocks unauthenticated users.
-3. Frontend blocks alumni users from booking sessions.
-4. Frontend loads alumni through `GET /alumni`.
-5. Student selects alumnus, session type, date, and time.
-6. Frontend calls `POST /bookings`.
-7. Backend checks current user is a student.
-8. Backend checks selected user is alumni.
-9. Backend validates the date/time format and rejects past booking times.
-10. Backend rejects active slot conflicts for the same alumni/date/time.
-11. Backend creates a `pending` booking.
-12. Backend creates a notification for the alumni user.
-13. Frontend stores latest booking in localStorage and routes to `/bookings/confirmation`.
+3. Student users see the booking request form and their `My Bookings` management list.
+4. Alumni users see only the `My Bookings` management list.
+5. Frontend loads alumni through `GET /alumni`.
+6. Student selects alumnus, session type, date, and time.
+7. Frontend calls `POST /bookings`.
+8. Backend checks current user is a student.
+9. Backend checks selected user is alumni.
+10. Backend validates the date/time format and rejects past booking times.
+11. Backend requires the requested 30-minute session to fit inside an alumni availability slot.
+12. Backend rejects active overlapping `pending` or `upcoming` bookings for the same alumni/date.
+13. Backend creates a `pending` booking.
+14. Backend creates a notification for the alumni user.
+15. Frontend stores latest booking in localStorage and routes to `/bookings/confirmation`.
 
 Missing:
 
-- Availability validation.
+- Frontend availability picker or visible available slots.
 - Meeting link creation.
 - Payment.
 - Calendar integration.
@@ -196,13 +194,33 @@ Backend supports:
 - Student cancels pending/upcoming booking with status `cancelled`.
 - Alumni completes upcoming booking with status `completed`.
 
+Frontend supports:
+
+- `/bookings` shows a `My Bookings` section populated by `GET /bookings/me`.
+- Alumni see Accept and Reject buttons for pending bookings.
+- Alumni see Mark as Completed for upcoming bookings.
+- Students see Cancel for pending/upcoming bookings.
+- The dashboard links users to `/bookings` to manage current booking state.
+- Status badges appear for `pending`, `upcoming`, `completed`, `cancelled`, and `rejected`.
+- Loading, refresh, and error states are handled in the booking management UI.
+
+## Alumni Availability Flow
+
+Backend supports:
+
+1. Alumni submits `POST /availability/` with either weekly `day_of_week` or date-specific `date`, plus `start_time` and `end_time`.
+2. Backend verifies the current user is alumni.
+3. Backend validates exactly one of `day_of_week` or `date`.
+4. Backend validates the time range.
+5. Any authenticated user can read availability through `GET /availability/{alumni_id}`.
+6. Owner alumni can delete a slot with `DELETE /availability/{availability_id}`.
+7. Booking creation checks these slots before creating a booking.
+
 Frontend missing:
 
-- Accept button.
-- Reject button.
-- Cancel button.
-- Complete button.
-- Booking list page that shows all current-user bookings from `GET /bookings/me`.
+- Availability creation UI.
+- Availability list/edit/delete UI.
+- Booking form does not yet show selectable slots from availability.
 
 ## Saved Alumni Flow
 
@@ -232,14 +250,21 @@ Backend supports:
 
 Frontend missing:
 
-- Review creation UI.
-- Review listing UI.
-- Rating validation UI.
-- Prompt after completed session.
+- Displaying reviewer names instead of student IDs.
+- Editing or deleting reviews.
+
+Frontend supports:
+
+- Completed student bookings show a review form.
+- Review form supports rating 1-5 and optional comment.
+- Duplicate reviews are hidden in the UI by comparing completed booking IDs with fetched alumni reviews.
+- Alumni profile pages show average rating and review list.
+- Review loading and error states are handled.
 
 Backend behavior:
 
 - Rating is validated from 1 to 5.
+- Duplicate reviews for the same booking are rejected.
 
 ## Notification Flow
 
