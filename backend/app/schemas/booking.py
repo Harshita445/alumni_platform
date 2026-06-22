@@ -9,10 +9,9 @@ class BookingCreate(BaseModel):
     date: date
     time: time
 
-    @field_validator("date")
+    @field_validator("date", mode="before")
     @classmethod
-    def validate_date(cls, value: date):
-        from datetime import date as date_type
+    def validate_date(cls, value):
         if isinstance(value, str):
             try:
                 return datetime.strptime(value, "%Y-%m-%d").date()
@@ -20,9 +19,9 @@ class BookingCreate(BaseModel):
                 raise ValueError("date must use YYYY-MM-DD format") from exc
         return value
 
-    @field_validator("time")
+    @field_validator("time", mode="before")
     @classmethod
-    def validate_time(cls, value: time):
+    def validate_time(cls, value):
         if isinstance(value, str):
             try:
                 return datetime.strptime(value, "%H:%M").time()
