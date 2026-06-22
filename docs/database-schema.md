@@ -9,7 +9,8 @@ The active ORM models are SQLAlchemy models in `backend/app/models`. Tables are 
 - Active connection string: `sqlite:///./app.db` from `backend/app/core/config.py`.
 - `backend/app/database.py` reads `settings.DATABASE_URL` for the active SQLAlchemy engine.
 - SQLite `check_same_thread=False` is configured.
-- No Alembic migration folder is present even though Alembic is installed in `requirements.txt`.
+- **Alembic migrations are now set up** in `backend/alembic/` with initial migration `001_initial_migration.py`.
+- Migration infrastructure is in place but not yet running (tables still created at startup via `Base.metadata.create_all()`).
 
 ## users
 
@@ -21,7 +22,7 @@ Defined in `backend/app/models/user.py`.
 | `email` | String | Unique, required, indexed |
 | `hashed_password` | String | Required |
 | `role` | String | Required; current enum values are `student` and `alumni` |
-| `is_verified` | Boolean | Defaults to `False`; currently not enforced during login |
+| `is_verified` | Boolean | Defaults to `False`; **now enforced during login** (403 Forbidden if False) |
 | `created_at` | DateTime | Server default `now()` |
 
 Relationships:
@@ -67,10 +68,17 @@ Defined in `backend/app/models/booking.py`.
 | `student_id` | Integer | Required, foreign key to `users.id` |
 | `alumni_id` | Integer | Required, foreign key to `users.id` |
 | `session_type` | String | Required |
-| `date` | String | Required; not a Date column |
-| `time` | String | Required; not a Time column |
+| `date` | Date | Required; SQLAlchemy Date type (YYYY-MM-DD in database) |
+| `time` | Time | Required; SQLAlchemy Time type (HH:MM:SS in database) |
 | `status` | String | Required; defaults to `pending` |
 | `created_at` | DateTime | Server default `now()` |
+
+**Date/Time Type Migration (2026-06-22)**:
+- Both `date` and `time` columns were previously `String` type.
+- Converted to native `Date` and `Time` SQLAlchemy types for better type safety.
+- Backend serialization uses ISO format strings (YYYY-MM-DD and HH:MM).
+- **Backward compatibility maintained**: Pydantic validators accept both string and native type inputs with `mode="before"`.
+- Existing databases with string values need migration; see `alembic/versions/001_initial_migration.py` for schema.
 
 Allowed status values:
 
@@ -204,10 +212,33 @@ Relationships:
 ## Schema Work Left
 
 - Decide whether to keep a single `profiles` table or split student/alumni-specific profile tables.
-- Add migrations before production data exists.
-- Use real date/time types for booking scheduling or document the string format strictly.
-- Consider migrating bookings from string `date`/`time` columns to real Date/Time columns.
-- Add meeting links if sessions are conducted inside external meeting tools.
+- Migrate existing databases from string date/time to native Date/Time types if data exists.
+- Use Alembic for future schema changes instead of manual DDL.
+- Implement email verification token storage if email verification flow is added.
+- Add password reset token storage for password recovery flow.
+- Consider adding meeting links if sessions are conducted inside external meeting tools.
 - Add payment/pricing tables only if paid sessions are in scope.
-- Add review rating constraints at model level.
-- Decide whether `is_verified` should be enforced and add verification token storage if needed.
+- Add rate limiting/throttling for production security.
+
+## Alembic Migrations
+
+Setup is complete in `backend/alembic/`:
+
+- **Location**: `backend/alembic/` directory with `env.py`, `script.py.mako`, and `versions/` subdirectory.
+- **Configuration**: `backend/alembic.ini` points to `backend/` as the root.
+- **Database URL**: Read from `app.core.config.settings.DATABASE_URL` in `env.py`.
+- **Initial Migration**: `backend/alembic/versions/001_initial_migration.py` contains all current tables with proper constraints.
+- **Status**: Infrastructure ready; tables still created at startup via `Base.metadata.create_all()` (not via Alembic).
+- **Future**: Once existing database has been initialized, future schema changes should use Alembic migrations.
+
+To run migrations once data is in place:
+
+```bash
+alembic upgrade head
+```
+
+To generate a new migration after model changes:
+
+```bash
+alembic revision --autogenerate -m "Description of changes"
+```

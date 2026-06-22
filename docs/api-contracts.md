@@ -26,7 +26,8 @@ Current implementation uses JWT bearer tokens.
 - Protected requests require `Authorization: Bearer <access_token>`.
 - The frontend stores token data in localStorage under `current-user`.
 - The backend does not currently use HTTP-only cookies.
-- The backend does not currently enforce email verification.
+- **Email verification is now enforced**: Users must have `is_verified=True` to log in. If not verified, login returns 403.
+- Password complexity is enforced at registration time.
 
 ## Common Error Shape
 
@@ -93,6 +94,12 @@ Backend validation:
 - `role` must match the `UserRole` enum.
 - Duplicate email returns 400.
 - Student role requires email ending with `@thapar.edu`.
+- **Password must meet complexity requirements** (configurable in `backend/app/core/config.py`):
+  - Minimum 8 characters (PASSWORD_MIN_LENGTH)
+  - At least one uppercase letter (PASSWORD_REQUIRE_UPPERCASE)
+  - At least one number (PASSWORD_REQUIRE_NUMBERS)
+  - At least one special character from `!@#$%^&*(),.?":{}|<>` (PASSWORD_REQUIRE_SPECIAL)
+  - If any requirement fails, returns 422 with validation error
 
 Success response:
 
@@ -106,10 +113,9 @@ Success response:
 Known gaps:
 
 - No full name in registration payload.
-- No email verification token.
+- No email verification token generation or email sending.
 - No college id.
 - No graduation year in registration payload.
-- No password complexity rule beyond being a string.
 
 ### POST /auth/login
 
@@ -137,7 +143,9 @@ Success response:
 }
 ```
 
-Error response:
+Error responses:
+
+Invalid credentials:
 
 ```json
 {
@@ -145,9 +153,17 @@ Error response:
 }
 ```
 
-Known gap:
+Email not verified:
 
-- `is_verified` is not checked.
+```json
+{
+  "detail": "Email not verified. Please verify your email before logging in."
+}
+```
+
+Status code: 403 Forbidden if email not verified, 401 Unauthorized if invalid credentials.
+
+**IMPORTANT**: Users with `is_verified=False` cannot log in. Email verification flow not yet implemented.
 
 ### GET /auth/me
 
@@ -231,16 +247,24 @@ Routes defined in `backend/app/routes/alumni.py`.
 
 Requires bearer token.
 
-Returns all alumni profiles matching optional filters.
+Returns all alumni profiles matching optional filters, with pagination support.
 
 Query parameters:
 
-| Parameter | Type | Notes |
-| --- | --- | --- |
-| `company` | string | Case-insensitive contains filter |
-| `branch` | string | Case-insensitive contains filter |
-| `graduation_year` | integer | Exact match |
-| `search` | string | Searches full name, company, designation, and bio |
+| Parameter | Type | Default | Notes |
+| --- | --- | --- | --- |
+| `page` | integer | 1 | Page number (1-indexed); values < 1 default to 1 |
+| `limit` | integer | 10 | Results per page; values < 1 default to 10 |
+| `company` | string | - | Case-insensitive contains filter |
+| `branch` | string | - | Case-insensitive contains filter |
+| `graduation_year` | integer | - | Exact match |
+| `search` | string | - | Searches full_name, company, designation, and bio |
+
+Pagination example:
+
+```text
+GET /alumni/?page=1&limit=10&company=Google
+```
 
 Success response:
 
@@ -254,18 +278,22 @@ Success response:
     "company": "Google",
     "designation": "Software Engineer",
     "bio": "Short bio",
-    "linkedin_url": "https://linkedin.com/in/example"
+    "linkedin_url": "https://linkedin.com/in/example",
+    "profile_image": null
   }
 ]
 ```
 
+Backward compatibility:
+
+- Omitting `page` and `limit` defaults to first 10 results.
+- Existing clients using filter parameters without pagination continue to work.
+
 Known gaps:
 
-- No pagination.
 - No rating fields.
 - No session type fields.
 - No paid/free fields.
-- Frontend currently fetches all alumni and filters client-side.
 
 ### GET /alumni/{alumni_id}
 
@@ -282,7 +310,8 @@ Success response:
   "company": "Google",
   "designation": "Software Engineer",
   "bio": "Short bio",
-  "linkedin_url": "https://linkedin.com/in/example"
+  "linkedin_url": "https://linkedin.com/in/example",
+  "profile_image": null
 }
 ```
 
@@ -307,6 +336,13 @@ Response:
 Requires bearer token.
 
 Only students can create bookings.
+
+Date/Time Format (2026-06-22 update):
+
+- Backend now uses native SQLAlchemy Date and Time types for type safety.
+- Request format unchanged: `date` (YYYY-MM-DD), `time` (HH:MM).
+- Response serializes Date/Time to ISO format strings.
+- Backward compatibility maintained for string inputs.
 
 Validation:
 
