@@ -1,6 +1,6 @@
 # API Contracts
 
-Last audited: 2026-06-22.
+Last audited: 2026-07-01.
 
 The active backend is a FastAPI app in `backend/app/main.py`. Routes are mounted directly on the app. There is currently no `/api/v1` prefix.
 
@@ -22,12 +22,29 @@ NEXT_PUBLIC_API_URL
 
 Current implementation uses JWT bearer tokens.
 
+### Status as of 2026-07-01
+
+Completed:
+- Email/password registration and login are working end to end.
+- Google social login is wired for students and alumni.
+- Alumni personal-account sign-ups can be placed into pending verification and approved by an admin.
+- Approval emails are triggered when SMTP settings are configured.
+- Backend validation now checks Google token audience, issuer, expiry, and email verification claims.
+
+Still pending:
+- A real Google OAuth client ID must be configured in the frontend and backend environment files.
+- SMTP credentials must be configured for approval emails to be delivered.
+- A full browser-based end-to-end test still needs to be run with the real credentials.
+- A stronger server-side Google ID-token verification flow can be added later if required.
+
 - Tokens are returned from `/auth/register` and `/auth/login`.
 - Protected requests require `Authorization: Bearer <access_token>`.
 - The frontend stores token data in localStorage under `current-user`.
 - The backend does not currently use HTTP-only cookies.
 - **Email verification is now enforced**: Users must have `is_verified=True` to log in. If not verified, login returns 403.
 - Password complexity is enforced at registration time.
+- Google social sign-in is now supported from the frontend via the Google Identity Services SDK. The frontend requires `NEXT_PUBLIC_GOOGLE_CLIENT_ID` to be set.
+- Route-level validation and authorization checks were tightened for profile updates, booking creation, saved-alumni actions, and alumni list filters.
 
 ## Common Error Shape
 
@@ -112,10 +129,10 @@ Success response:
 
 Known gaps:
 
-- No full name in registration payload.
-- No email verification token generation or email sending.
-- No college id.
-- No graduation year in registration payload.
+- No full name is required in the registration payload; the profile can be filled later.
+- Email confirmation tokens are not yet implemented; the current flow relies on manual/admin verification for alumni.
+- No college id is collected in the current registration flow.
+- No graduation year is required in the registration payload; it is typically added via profile updates.
 
 ### POST /auth/login
 
@@ -164,6 +181,85 @@ Email not verified:
 Status code: 403 Forbidden if email not verified, 401 Unauthorized if invalid credentials.
 
 **IMPORTANT**: Users with `is_verified=False` cannot log in. Email verification flow not yet implemented.
+
+### POST /auth/google
+
+Handles Google-based sign-in/sign-up. The frontend sends the Google ID token; the backend extracts the email, name, and provider id from it and applies the role-specific rules below.
+
+Frontend requirement:
+
+```text
+NEXT_PUBLIC_GOOGLE_CLIENT_ID=<google_oauth_client_id>
+
+# Backend env
+GOOGLE_CLIENT_ID=<same_google_oauth_client_id>
+ADMIN_API_KEY=<secure-admin-key>
+SMTP_HOST=<smtp-host>
+SMTP_PORT=587
+SMTP_USERNAME=<smtp-username>
+SMTP_PASSWORD=<smtp-password>
+SMTP_FROM_EMAIL=<from-address>
+```
+
+Request body:
+
+```json
+{
+  "role": "student",
+  "id_token": "google_id_token",
+  "email": "optional_email_override",
+  "name": "optional_display_name",
+  "provider_id": "optional_provider_id"
+}
+```
+
+Rules:
+
+- Students can only use a Thapar Gmail account for Google sign-in.
+- Alumni can use either a Thapar account or a personal Google account.
+- Alumni using a personal Google account are created as pending verification users and cannot sign in until an admin approves them.
+- Thapar-domain alumni and all students are auto-approved on first Google sign-in.
+
+Successful response:
+
+```json
+{
+  "access_token": "jwt",
+  "token_type": "bearer",
+  "status": "verified",
+  "requires_admin_review": false
+}
+```
+
+Pending review response:
+
+```json
+{
+  "detail": "Your alumni account is pending admin verification."
+}
+```
+
+Frontend behavior:
+
+- The login and registration pages call this endpoint after a successful Google sign-in prompt.
+- A successful response stores the JWT and redirects the user to the dashboard.
+- A pending-verification response surfaces the message to the user so alumni using a personal Google account know they must wait for approval.
+
+### POST /auth/admin/verify
+
+Admin-only endpoint used to approve pending alumni accounts.
+
+Headers:
+
+```text
+X-Admin-Key: <admin_secret>
+```
+
+Query params:
+
+```text
+user_id=42
+```
 
 ### GET /auth/me
 

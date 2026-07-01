@@ -162,6 +162,33 @@ export async function registerUser(payload: {
   return storedUser;
 }
 
+export async function googleAuth(payload: {
+  role: string;
+  email: string;
+  name?: string;
+  provider_id?: string;
+  id_token?: string;
+}) {
+  const tokenData = await request("/auth/google", {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+
+  const user = await fetchMe(tokenData.access_token);
+  const profile = await fetchProfile(tokenData.access_token);
+
+  const storedUser: StoredUser = {
+    ...user,
+    access_token: tokenData.access_token,
+    token_type: tokenData.token_type,
+    profile,
+  };
+
+  saveStoredUser(storedUser);
+
+  return storedUser;
+}
+
 export async function loginUser(
   email: string,
   password: string
@@ -230,6 +257,33 @@ export async function fetchProfile(
 ): Promise<UserProfile> {
   return request("/profile/me", {
     headers: getAuthHeaders(token),
+  });
+}
+
+export type PendingAdminUser = {
+  id: number;
+  email: string;
+  role: "student" | "alumni";
+  auth_provider: string;
+  display_name?: string | null;
+  is_verified: boolean;
+  is_pending_verification: boolean;
+};
+
+export async function fetchPendingAdminUsers(adminKey: string) {
+  return request("/auth/admin/pending", {
+    headers: {
+      "X-Admin-Key": adminKey,
+    },
+  }) as Promise<PendingAdminUser[]>;
+}
+
+export async function verifyAdminUser(userId: number, adminKey: string) {
+  return request(`/auth/admin/verify?user_id=${userId}`, {
+    method: "POST",
+    headers: {
+      "X-Admin-Key": adminKey,
+    },
   });
 }
 

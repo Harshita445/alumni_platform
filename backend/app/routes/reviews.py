@@ -19,7 +19,7 @@ router = APIRouter(
 )
 
 
-@router.post("/", response_model={"message": str})
+@router.post("/", response_model=dict)
 def create_review(
     payload: ReviewCreate,
     db: Session = Depends(get_db),

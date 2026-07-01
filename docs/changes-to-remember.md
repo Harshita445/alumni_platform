@@ -1,6 +1,56 @@
 # Changes To Remember
 
-Last updated: 2026-06-22.
+Last updated: 2026-07-01.
+
+## Google Sign-In / Sign-Up Support
+
+- Google-based sign-in/signup is now supported for both students and alumni.
+- Students must use a Thapar Gmail account for Google sign-in.
+- Alumni can use either a Thapar Google account or a personal Google account; personal-account alumni are placed into a pending-admin-verification state.
+- Admin approval for alumni pending verification is available via the /auth/admin/verify endpoint.
+- The frontend now uses the Google Identity Services SDK from the login and registration pages, and requires `NEXT_PUBLIC_GOOGLE_CLIENT_ID` to be set.
+
+## Frontend Social Login Wiring
+
+- Added a shared Google auth helper in [frontend/src/lib/googleAuth.ts](frontend/src/lib/googleAuth.ts).
+- The login and registration pages now route Google credentials to the backend `/auth/google` endpoint.
+- Pending-verification errors are surfaced to the user so alumni approvals are explicit.
+
+## Authentication Behavior Summary
+
+- Email/password registration now stores the hashed password and returns a JWT.
+- Login requires `is_verified=True`; pending alumni accounts are rejected with a 403 message until approved.
+- Thapar-domain Google sign-ins are auto-approved for students and alumni.
+
+## Security Hardening Summary
+
+- Added stronger validation to profile updates, booking inputs, and alumni search filters.
+- Restricted profile updates so students cannot modify alumni-only fields such as company and designation.
+- Capped pagination sizes and trimmed search terms to reduce abuse of list endpoints.
+- Added regression tests covering authentication and route-level hardening expectations.
+
+## Status Snapshot (2026-07-01)
+
+### Completed
+
+- Fixed the backend auth flow for email/password registration and login.
+- Added Google OAuth support for students and alumni in both the backend and frontend.
+- Implemented alumni pending-verification handling for personal Google accounts.
+- Added an admin approval endpoint and approval-email hook for pending alumni accounts.
+- Hardened route-level validation for profile updates, bookings, saved-alumni actions, and alumni search.
+- Added regression tests covering Google auth behavior and alumni approval flow.
+
+### Remaining Work (Exact Next Steps)
+
+1. Create or configure a real Google OAuth app in Google Cloud and set the client ID in both frontend and backend environment files.
+   - Frontend: [frontend/.env.local](frontend/.env.local)
+   - Backend: [backend/.env](backend/.env)
+2. Configure SMTP credentials and an admin API key in the backend environment.
+3. Start the backend and frontend with those real environment values and verify the full browser flow end to end.
+4. Replace the current decode-only Google token handling with full server-side verification against Google’s public keys if stronger production validation is required.
+5. Add rate limiting, stronger production secret handling, and more end-to-end auth/authorization tests.
+6. Add a true email-verification token flow if email confirmation is required instead of the current manual verification model.
+7. Add password reset and admin moderation UX if those features are needed.
 
 ## Session 1: Completed Scheduling And Reviews Work
 

@@ -60,6 +60,7 @@ export default function Navbar() {
           <Link href="/dashboard">Dashboard</Link>
           <Link href="/bookings">Bookings</Link>
           <Link href="/profile">Profile</Link>
+          {user ? <Link href="/admin">Admin</Link> : null}
         </div>
 
         <div

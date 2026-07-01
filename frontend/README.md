@@ -44,6 +44,21 @@ Override backend URL:
 NEXT_PUBLIC_API_URL=http://localhost:8000 npm run dev
 ```
 
+Create a local frontend environment file:
+
+```bash
+copy .env.example .env.local
+```
+
+Then update `.env.local` with your real Google OAuth client ID:
+
+```env
+NEXT_PUBLIC_API_URL=http://localhost:8000
+NEXT_PUBLIC_GOOGLE_CLIENT_ID=your_google_client_id_here
+```
+
+The same client ID should also be copied into the backend `.env` file as `GOOGLE_CLIENT_ID`.
+
 ## Scripts
 
 ```bash

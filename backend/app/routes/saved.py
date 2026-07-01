@@ -26,6 +26,9 @@ def save_alumni(
             detail="Students only",
         )
 
+    if alumni_id <= 0:
+        raise HTTPException(status_code=400, detail="Invalid alumni id")
+
     alumni = db.query(User).filter(
         User.id == alumni_id,
         User.role == "alumni",

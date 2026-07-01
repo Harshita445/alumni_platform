@@ -1,11 +1,13 @@
 from datetime import datetime
+from typing import Optional
+
 from pydantic import BaseModel, ConfigDict, Field
 
 
 class ReviewCreate(BaseModel):
     booking_id: int
     rating: int = Field(ge=1, le=5)
-    comment: str | None = None
+    comment: Optional[str] = None
 
 
 class ReviewResponse(BaseModel):
@@ -14,7 +16,7 @@ class ReviewResponse(BaseModel):
     student_id: int
     alumni_id: int
     rating: int
-    comment: str | None = None
-    created_at: datetime | None = None
+    comment: Optional[str] = None
+    created_at: Optional[datetime] = None
 
     model_config = ConfigDict(from_attributes=True)

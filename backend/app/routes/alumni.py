@@ -34,6 +34,8 @@ def get_alumni(
         page = 1
     if limit < 1:
         limit = 10
+    if limit > 50:
+        limit = 50
     
     query = (
         db.query(Profile)
@@ -42,11 +44,13 @@ def get_alumni(
     )
 
     if company:
+        company = company.strip()
         query = query.filter(
             Profile.company.ilike(f"%{company}%")
         )
 
     if branch:
+        branch = branch.strip()
         query = query.filter(
             Profile.branch.ilike(f"%{branch}%")
         )
@@ -57,6 +61,9 @@ def get_alumni(
         )
 
     if search:
+        search = search.strip()
+        if len(search) > 80:
+            search = search[:80]
         query = query.filter(
             or_(
                 Profile.full_name.ilike(f"%{search}%"),

@@ -1,10 +1,11 @@
 from datetime import datetime, date, time
+from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 class BookingCreate(BaseModel):
-    alumni_id: int
+    alumni_id: int = Field(gt=0)
     session_type: str = Field(min_length=1, max_length=80)
     date: date
     time: time
@@ -38,6 +39,6 @@ class BookingResponse(BaseModel):
     date: date
     time: time
     status: str
-    created_at: datetime | None = None
+    created_at: Optional[datetime] = None
 
     model_config = ConfigDict(from_attributes=True)

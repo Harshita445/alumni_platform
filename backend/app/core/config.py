@@ -17,6 +17,14 @@ class Settings(BaseSettings):
     PASSWORD_REQUIRE_NUMBERS: bool = True
     PASSWORD_REQUIRE_SPECIAL: bool = True
 
+    GOOGLE_CLIENT_ID: str = ""
+    ADMIN_API_KEY: str = ""
+    SMTP_HOST: str = ""
+    SMTP_PORT: int = 25
+    SMTP_USERNAME: str = ""
+    SMTP_PASSWORD: str = ""
+    SMTP_FROM_EMAIL: str = ""
+
     class Config:
         env_file = ".env"
 

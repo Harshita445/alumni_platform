@@ -1,11 +1,12 @@
 from datetime import date, time
+from typing import Optional
 
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 class AvailabilityCreate(BaseModel):
-    day_of_week: int | None = Field(default=None, ge=0, le=6)
-    date: date | None = None
+    day_of_week: Optional[int] = Field(default=None, ge=0, le=6)
+    date: Optional[date] = None
     start_time: time
     end_time: time
 
@@ -23,8 +24,8 @@ class AvailabilityCreate(BaseModel):
 class AvailabilityResponse(BaseModel):
     id: int
     alumni_id: int
-    day_of_week: int | None = None
-    date: date | None = None
+    day_of_week: Optional[int] = None
+    date: Optional[date] = None
     start_time: time
     end_time: time
 

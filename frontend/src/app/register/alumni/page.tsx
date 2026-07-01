@@ -1,9 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+
 import { uniqueCompanies } from "@/data/companies";
+import { promptGoogleSignIn } from "@/lib/googleAuth";
 import {
+  googleAuth,
   registerUser,
   saveStoredUser,
   updateProfile,
@@ -23,6 +26,46 @@ export default function AlumniRegisterPage() {
   const [bio, setBio] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isGoogleReady, setIsGoogleReady] = useState(false);
+
+  useEffect(() => {
+    let ignore = false;
+
+    async function prepareGoogle() {
+      const ready = await import("@/lib/googleAuth").then((mod) => mod.loadGoogleAuthScript());
+      if (!ignore) {
+        setIsGoogleReady(ready);
+      }
+    }
+
+    prepareGoogle();
+
+    return () => {
+      ignore = true;
+    };
+  }, []);
+
+  const handleGoogleSubmit = async () => {
+    setError(null);
+
+    try {
+      await promptGoogleSignIn("alumni", async (credential) => {
+        const storedUser = await googleAuth({
+          role: "alumni",
+          email: "",
+          id_token: credential,
+        });
+        saveStoredUser(storedUser);
+        router.push("/dashboard");
+      });
+    } catch (err: unknown) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Google sign-in failed."
+      );
+    }
+  };
 
   const handleSubmit = async () => {
     setError(null);
@@ -175,6 +218,21 @@ export default function AlumniRegisterPage() {
           }}
         >
           {isSubmitting ? "Creating account..." : "Create Account"}
+        </button>
+
+        <button
+          type="button"
+          onClick={handleGoogleSubmit}
+          disabled={!isGoogleReady}
+          style={{
+            ...buttonStyle,
+            background: "var(--surface)",
+            color: "var(--text-primary)",
+            border: "1px solid var(--border)",
+            opacity: isGoogleReady ? 1 : 0.7,
+          }}
+        >
+          Continue with Google
         </button>
       </div>
     </main>

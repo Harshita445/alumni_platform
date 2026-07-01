@@ -81,6 +81,12 @@ def update_profile(
         update_data.pop("company", None)
         update_data.pop("designation", None)
 
+    allowed_fields = {"full_name", "branch", "graduation_year", "bio", "linkedin_url"}
+    if current_user.role == UserRole.ALUMNI.value:
+        allowed_fields.update({"company", "designation"})
+
+    update_data = {key: value for key, value in update_data.items() if key in allowed_fields}
+
     for key, value in update_data.items():
         setattr(profile, key, value)
 

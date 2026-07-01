@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta, date, time
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
@@ -25,7 +25,7 @@ BOOKING_DURATION_MINUTES = 30
 
 
 class BookingStatusUpdate(BaseModel):
-    status: str
+    status: str = Field(min_length=1, max_length=20)
 
 
 def _create_notification(

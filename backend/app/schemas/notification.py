@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Optional
 
 from pydantic import BaseModel, ConfigDict
 
@@ -6,7 +7,7 @@ from pydantic import BaseModel, ConfigDict
 class NotificationResponse(BaseModel):
     id: int
     user_id: int
-    booking_id: int | None = None
+    booking_id: Optional[int] = None
     message: str
     is_read: bool
     created_at: datetime

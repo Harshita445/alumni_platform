@@ -5,7 +5,6 @@ from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 
 from app.database import Base
-from sqlalchemy.orm import relationship
 
 class UserRole(str, Enum):
     STUDENT = "student"
@@ -23,7 +22,15 @@ class User(Base):
 
     role = Column(String, nullable=False)
 
+    auth_provider = Column(String, default="email")
+
+    provider_id = Column(String, nullable=True)
+
+    display_name = Column(String, nullable=True)
+
     is_verified = Column(Boolean, default=False)
+
+    is_pending_verification = Column(Boolean, default=False)
 
     created_at = Column(
         DateTime(timezone=True),

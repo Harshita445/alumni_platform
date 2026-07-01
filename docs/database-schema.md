@@ -1,16 +1,28 @@
 # Database Schema
 
-Last audited: 2026-06-22.
+Last audited: 2026-07-01.
 
 The active ORM models are SQLAlchemy models in `backend/app/models`. Tables are created by `Base.metadata.create_all(bind=engine)` in `backend/app/main.py`.
 
 ## Active Database Connection
 
 - Active connection string: `sqlite:///./app.db` from `backend/app/core/config.py`.
+
+## Current Status (2026-07-01)
+
+Completed:
+- The core auth-related user fields are present and used by the login, Google auth, and verification flows.
+- The schema supports pending alumni verification via `is_pending_verification` and `is_verified`.
+- Alembic migration scaffolding exists under `backend/alembic/` with an initial migration file.
+
+Still pending:
+- The Alembic migration chain should be run in a real environment to apply the schema instead of relying on startup table creation.
+- Production database settings, backup strategy, and connection pooling still need to be configured.
+- Additional indexes and constraints can be added later if the dataset grows.
+
+Additional implementation notes:
 - `backend/app/database.py` reads `settings.DATABASE_URL` for the active SQLAlchemy engine.
 - SQLite `check_same_thread=False` is configured.
-- **Alembic migrations are now set up** in `backend/alembic/` with initial migration `001_initial_migration.py`.
-- Migration infrastructure is in place but not yet running (tables still created at startup via `Base.metadata.create_all()`).
 
 ## users
 
@@ -22,7 +34,22 @@ Defined in `backend/app/models/user.py`.
 | `email` | String | Unique, required, indexed |
 | `hashed_password` | String | Required |
 | `role` | String | Required; current enum values are `student` and `alumni` |
-| `is_verified` | Boolean | Defaults to `False`; **now enforced during login** (403 Forbidden if False) |
+| `auth_provider` | String | Defaults to `email`; used for Google-based sign-ins |
+| `provider_id` | String | Nullable; stores the Google subject id |
+| `display_name` | String | Nullable; stores the Google display name |
+| `is_verified` | Boolean | Defaults to `False`; auto-true for Thapar-domain Google sign-ins and direct email registrations |
+| `is_pending_verification` | Boolean | Defaults to `False`; used for alumni personal-account Google sign-ins awaiting admin approval |
+
+Important auth behavior:
+
+- `auth_provider='email'` is used for standard email/password sign-ups and logins.
+- `auth_provider='google'` is used for Google-based sign-ins.
+- A personal Google account for an alumni user is created with `is_verified=False` and `is_pending_verification=True` until an admin approves it.
+
+Security notes:
+
+- Profile updates are constrained by role to prevent students from setting alumni-only fields.
+- Search and pagination parameters are trimmed and capped to reduce abuse of list endpoints.
 | `created_at` | DateTime | Server default `now()` |
 
 Relationships:
