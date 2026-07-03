@@ -28,7 +28,6 @@ def get_alumni(
     graduation_year: Optional[int] = None,
     search: Optional[str] = None,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
 ):
     if page < 1:
         page = 1
@@ -98,7 +97,6 @@ def get_alumni(
 def get_alumni_details(
     alumni_id: int,
     db: Session = Depends(get_db),
-    _current_user: User = Depends(get_current_user),
 ):
     profile = (
         db.query(Profile)

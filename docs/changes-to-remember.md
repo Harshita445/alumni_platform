@@ -37,6 +37,8 @@ Last updated: 2026-07-01.
 - Added Google OAuth support for students and alumni in both the backend and frontend.
 - Implemented alumni pending-verification handling for personal Google accounts.
 - Added an admin approval endpoint and approval-email hook for pending alumni accounts.
+ - Implemented password reset flow with `POST /auth/password-reset/request` and `POST /auth/password-reset/confirm`.
+   - Sends a password reset email when SMTP is configured; in development/test the endpoint returns a token for convenience.
 - Hardened route-level validation for profile updates, bookings, saved-alumni actions, and alumni search.
 - Added regression tests covering Google auth behavior and alumni approval flow.
 

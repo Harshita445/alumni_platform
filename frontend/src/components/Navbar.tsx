@@ -26,12 +26,12 @@ export default function Navbar() {
       }}
     >
       <nav
+        className="site-nav"
         style={{
           width: "100%",
           maxWidth: "1440px",
           margin: "0 auto",
           minHeight: "100px",
-          padding: "12px 52px",
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
@@ -51,11 +51,12 @@ export default function Navbar() {
           <img
             src="/logo.svg"
             alt="Alumly logo"
-            style={{ height: 68, width: "auto" }}
+            style={{ height: 72, width: "auto" }}
           />
         </Link>
 
         <div
+          className="site-nav-links"
           style={{
             display: "flex",
             gap: "38px",
@@ -63,7 +64,7 @@ export default function Navbar() {
             flexWrap: "wrap",
             justifyContent: "center",
             flex: "1 1 auto",
-            fontSize: "16px",
+            fontSize: "19px",
           }}
         >
           <Link href="/search">Explore</Link>
@@ -74,6 +75,7 @@ export default function Navbar() {
         </div>
 
         <div
+          className="site-nav-actions"
           style={{
             display: "flex",
             gap: "16px",
@@ -81,7 +83,7 @@ export default function Navbar() {
             flexWrap: "wrap",
             justifyContent: "flex-end",
             flex: "0 0 auto",
-            fontSize: "16px",
+            fontSize: "17px",
           }}
         >
           {user ? (
@@ -111,6 +113,7 @@ export default function Navbar() {
               <Link href="/login">Login</Link>
               <Link
                 href="/register"
+                className="nav-register-link"
                 style={{
                   minWidth: "108px",
                   padding: "12px 22px",

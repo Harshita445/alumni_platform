@@ -4,14 +4,18 @@ import os
 import sys
 import time
 
+import pytest
+
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 
 from fastapi.testclient import TestClient
 
 from app.database import SessionLocal
 from app.main import app
+from app.models.profile import Profile
 from app.models.user import User
 from app.routes import auth as auth_routes
+from app.core.security import hash_password
 
 client = TestClient(app)
 
@@ -51,6 +55,34 @@ def test_register_rejects_alumni_role_for_student_email_patterns():
         db.close()
 
 
+@pytest.mark.parametrize(
+    "suffix",
+    ["be23", "be24", "be25", "be26"],
+)
+def test_register_rejects_students_with_graduating_batch_suffixes(suffix):
+    email = f"student_{suffix}@thapar.edu"
+    db = SessionLocal()
+    try:
+        db.query(User).filter(User.email == email).delete()
+        db.commit()
+
+        response = client.post(
+            "/auth/register",
+            json={
+                "email": email,
+                "password": "Password123!",
+                "role": "student",
+            },
+        )
+
+        assert response.status_code == 400
+        assert "alumni" in response.json()["detail"].lower()
+    finally:
+        db.query(User).filter(User.email == email).delete()
+        db.commit()
+        db.close()
+
+
 def test_login_rejects_student_email_patterns_with_student_message():
     response = client.post(
         "/auth/login",
@@ -64,6 +96,58 @@ def test_login_rejects_student_email_patterns_with_student_message():
     assert "student" in response.json()["detail"].lower()
 
 
+def test_get_alumni_is_publicly_accessible():
+    response = client.get("/alumni")
+
+    assert response.status_code == 200
+    assert isinstance(response.json(), list)
+
+
+def test_get_alumni_details_is_publicly_accessible():
+    db = SessionLocal()
+
+    try:
+        user = User(
+            email="public-alumni@example.com",
+            hashed_password="unused",
+            role="alumni",
+            auth_provider="email",
+            display_name="Public Alumni",
+            is_verified=True,
+        )
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+
+        profile = Profile(
+            user_id=user.id,
+            full_name="Public Alumni",
+            company="Test Company",
+            designation="Software Engineer",
+            branch="CSE",
+            graduation_year=2022,
+            bio="Public alumni profile for tests.",
+            linkedin_url="https://linkedin.com/in/public-alumni",
+        )
+        db.add(profile)
+        db.commit()
+
+        response = client.get(f"/alumni/{user.id}")
+
+        assert response.status_code == 200
+        assert response.json()["id"] == user.id
+        assert response.json()["full_name"] == "Public Alumni"
+    finally:
+        db.query(Profile).filter(
+            Profile.user_id == user.id
+        ).delete()
+        db.query(User).filter(
+            User.email == "public-alumni@example.com"
+        ).delete()
+        db.commit()
+        db.close()
+
+
 def test_booking_status_rejects_invalid_transition_values():
     response = client.patch(
         "/bookings/1",
@@ -72,6 +156,60 @@ def test_booking_status_rejects_invalid_transition_values():
     )
 
     assert response.status_code == 401
+
+
+def test_password_reset_flow_changes_password():
+    db = SessionLocal()
+    try:
+        email = "reset-user@example.com"
+        db.query(User).filter(User.email == email).delete()
+        db.commit()
+
+        user = User(
+            email=email,
+            hashed_password=hash_password("OldPassw0rd!"),
+            role="student",
+            auth_provider="email",
+            is_verified=True,
+        )
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+
+        # request reset
+        response = client.post(
+            "/auth/password-reset/request",
+            json={"email": email},
+        )
+
+        assert response.status_code == 200
+        body = response.json()
+
+        token = body.get("token")
+        # token should be present in test env (SMTP not configured)
+        assert token
+
+        # confirm reset with a valid new password
+        new_password = "NewPassw0rd!"
+        response2 = client.post(
+            "/auth/password-reset/confirm",
+            json={"token": token, "new_password": new_password},
+        )
+
+        assert response2.status_code == 200
+
+        # now login with new password
+        response3 = client.post(
+            "/auth/login",
+            data={"username": email, "password": new_password},
+        )
+
+        assert response3.status_code == 200
+        assert "access_token" in response3.json()
+    finally:
+        db.query(User).filter(User.email == email).delete()
+        db.commit()
+        db.close()
 
 
 def test_google_auth_keeps_verified_personal_alumni_unblocked():

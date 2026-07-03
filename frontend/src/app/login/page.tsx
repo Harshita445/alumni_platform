@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { LockKeyhole, Mail } from "lucide-react";
 
 import { googleAuth, loginUser } from "@/lib/api";
 import { useAuth } from "@/hooks/useAuth";
@@ -88,116 +89,134 @@ export default function LoginPage() {
   };
 
   return (
-    <main style={container}>
-      <h1 style={title}>Welcome back</h1>
+    <main className="auth-page login-page">
+      <div className="auth-bg-pattern auth-bg-pattern-one" aria-hidden="true" />
+      <div className="auth-bg-pattern auth-bg-pattern-two" aria-hidden="true" />
 
-      <div style={form}>
-        <input
-          type="email"
-          placeholder="College email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          style={inputStyle}
-        />
+      <section className="auth-card" aria-labelledby="login-heading">
+        <aside className="auth-brand-panel" aria-hidden="true">
+          <img
+            src="/thapar-campus-hero.jpg"
+            alt=""
+            className="auth-campus-image"
+          />
+          <div className="auth-brand-overlay" />
+          <div className="auth-brand-content">
+            <img src="/logo.svg" alt="" className="auth-logo" />
+            <p className="auth-brand-kicker">
+              Built for students, powered by alumni.
+            </p>
+            <h2>Welcome back.</h2>
+            <p>
+              Sign in to reconnect with the Thapar alumni community.
+            </p>
+          </div>
+        </aside>
 
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          style={inputStyle}
-        />
+        <div className="auth-form-panel">
+          <div className="auth-header">
+            <h1 id="login-heading">Login to your account</h1>
+            <p>Continue your journey with the Alumly community.</p>
+          </div>
 
-        {error ? <p style={errorStyle}>{error}</p> : null}
+          <div style={form}>
+            <label className="auth-field">
+              <span>College email</span>
+              <div className="auth-input-wrap">
+                <Mail size={21} strokeWidth={1.9} aria-hidden="true" />
+                <input
+                  type="email"
+                  placeholder="Enter your college email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="auth-input"
+                />
+              </div>
+            </label>
 
-        <button
-          onClick={handleSubmit}
-          disabled={isSubmitting}
-          style={{
-            ...buttonStyle,
-            opacity: isSubmitting ? 0.7 : 1,
-          }}
-        >
-          {isSubmitting ? "Logging in..." : "Login"}
-        </button>
+            <label className="auth-field">
+              <span>Password</span>
+              <div className="auth-input-wrap">
+                <LockKeyhole size={21} strokeWidth={1.9} aria-hidden="true" />
+                <input
+                  type="password"
+                  placeholder="Enter your password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="auth-input"
+                />
+              </div>
+            </label>
 
-        <div style={{ display: "grid", gap: "12px" }}>
-          <button
-            type="button"
-            onClick={() => handleGoogleSubmit("student")}
-            disabled={!isGoogleReady}
-            style={{
-              ...buttonStyle,
-              background: "var(--surface)",
-              color: "var(--text-primary)",
-              border: "1px solid var(--border)",
-              opacity: isGoogleReady ? 1 : 0.7,
-            }}
-          >
-            Continue with Google as Student
-          </button>
+            {error ? <p style={errorStyle}>{error}</p> : null}
 
-          <button
-            type="button"
-            onClick={() => handleGoogleSubmit("alumni")}
-            disabled={!isGoogleReady}
-            style={{
-              ...buttonStyle,
-              background: "var(--surface)",
-              color: "var(--text-primary)",
-              border: "1px solid var(--border)",
-              opacity: isGoogleReady ? 1 : 0.7,
-            }}
-          >
-            Continue with Google as Alumni
-          </button>
+            <button
+              onClick={handleSubmit}
+              disabled={isSubmitting}
+              className="auth-primary-button"
+              style={{
+                opacity: isSubmitting ? 0.7 : 1,
+              }}
+            >
+              {isSubmitting ? "Logging in..." : "Login"}
+            </button>
+
+            <div className="auth-separator" aria-hidden="true">
+              <span />
+              <strong>or</strong>
+              <span />
+            </div>
+
+            <div style={{ display: "grid", gap: "14px" }}>
+              <button
+                type="button"
+                onClick={() => handleGoogleSubmit("student")}
+                disabled={!isGoogleReady}
+                className="auth-google-button"
+                style={{
+                  opacity: isGoogleReady ? 1 : 0.7,
+                }}
+              >
+                <span className="google-mark" aria-hidden="true">G</span>
+                Continue with Google (Student)
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleGoogleSubmit("alumni")}
+                disabled={!isGoogleReady}
+                className="auth-google-button"
+                style={{
+                  opacity: isGoogleReady ? 1 : 0.7,
+                }}
+              >
+                <span className="google-mark" aria-hidden="true">G</span>
+                Continue with Google (Alumni)
+              </button>
+            </div>
+
+            <div className="auth-footer">
+              <span>New to Alumly?</span>
+              <a href="/register">
+                Create your account <span aria-hidden="true">-&gt;</span>
+              </a>
+            </div>
+          </div>
         </div>
-
-        <a href="/register" style={linkStyle}>
-          Create account
-        </a>
-      </div>
+      </section>
     </main>
   );
 }
 
-const container = {
-  maxWidth: "480px",
-  margin: "80px auto",
-  padding: "32px",
-};
-
-const title = {
-  marginBottom: "24px",
-};
-
 const form = {
   display: "flex",
   flexDirection: "column" as const,
-  gap: "16px",
-};
-
-const inputStyle = {
-  padding: "14px",
-  borderRadius: "var(--radius-md)",
-  border: "1px solid var(--border)",
-};
-
-const buttonStyle = {
-  background: "var(--primary)",
-  color: "#fff",
-  border: "none",
-  padding: "16px",
-  borderRadius: "var(--radius-md)",
-  cursor: "pointer",
+  gap: "22px",
 };
 
 const errorStyle = {
   color: "var(--danger)",
   margin: 0,
-};
-
-const linkStyle = {
-  color: "var(--primary)",
-  textAlign: "center" as const,
+  fontSize: "14px",
+  fontWeight: 600,
 };
