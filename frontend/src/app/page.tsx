@@ -1,4 +1,38 @@
 import Link from "next/link";
+import {
+  UsersRound,
+  MessageCircle,
+  FileText,
+  Users,
+  Calendar,
+} from "lucide-react";
+
+const features = [
+  {
+    Icon: MessageCircle,
+    title: "1:1 Mentorship",
+    description:
+      "Learn from experienced alumni who've been where you are.",
+  },
+  {
+    Icon: FileText,
+    title: "Resume Reviews",
+    description:
+      "Get expert feedback and make your resume stand out.",
+  },
+  {
+    Icon: Users,
+    title: "Mock Interviews",
+    description:
+      "Practice real interviews and build confidence to succeed.",
+  },
+  {
+    Icon: Calendar,
+    title: "Career Guidance",
+    description:
+      "Receive personalized advice and make informed career decisions.",
+  },
+];
 
 export default function HomePage() {
   return (
@@ -22,16 +56,23 @@ export default function HomePage() {
             style={{
               display: "inline-flex",
               alignItems: "center",
-              gap: "8px",
-              padding: "10px 18px",
+              gap: "10px",
+              padding: "9px 16px",
               background: "var(--surface-secondary)",
               borderRadius: "999px",
               color: "var(--text-secondary)",
               marginBottom: "32px",
               fontSize: "14px",
+              fontWeight: 500,
             }}
           >
-            ● 500+ verified alumni from Thapar
+            <UsersRound
+              size={16}
+              color="#8B5E3C"
+              strokeWidth={2.4}
+              aria-hidden="true"
+            />
+            Built for students. Powered by alumni.
           </div>
 
           <h1
@@ -94,68 +135,147 @@ export default function HomePage() {
             </Link>
           </div>
 
-          <div
-            style={{
-              display: "flex",
-              gap: "48px",
-            }}
-          >
-            <Stat value="500+" label="Verified alumni" />
-            <Stat value="120+" label="Companies" />
-            <Stat value="4.9★" label="Average rating" />
-          </div>
         </div>
 
         <div
           style={{
-            background: "var(--surface)",
-            borderRadius: "32px",
-            padding: "24px",
-            border: "1px solid var(--border)",
-            boxShadow: "var(--shadow-md)",
+            position: "relative",
           }}
         >
-          <img
-            src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?w=1200"
-            alt="Students networking"
+          <div
+            aria-hidden="true"
             style={{
+              position: "absolute",
+              top: "-28px",
+              right: "-30px",
+              width: "110px",
+              height: "150px",
+              backgroundImage:
+                "radial-gradient(rgba(139,94,60,0.18) 1.8px, transparent 1.8px)",
+              backgroundSize: "16px 16px",
+              zIndex: 0,
+            }}
+          />
+          <img
+            src="/thapar-campus-hero.jpg"
+            alt="Thapar campus red residence building"
+            style={{
+              position: "relative",
+              zIndex: 1,
               width: "100%",
-              height: "600px",
+              height: "auto",
+              aspectRatio: "3 / 2",
               objectFit: "cover",
-              borderRadius: "24px",
+              objectPosition: "center",
+              borderRadius: "32px",
+              border: "1px solid rgba(139,94,60,0.14)",
+              boxShadow: "0 18px 45px rgba(47, 33, 26, 0.12)",
             }}
           />
         </div>
       </section>
+
+      <section
+        style={{
+          width: "100%",
+          marginTop: "80px",
+        }}
+      >
+        <div
+          style={{
+            width: "100%",
+            maxWidth: "1200px",
+            margin: "0 auto",
+            padding: "40px 48px",
+            background: "#F7F1EB",
+            border: "1px solid rgba(139,94,60,0.12)",
+            borderRadius: "24px",
+          }}
+        >
+          <h2
+            style={{
+              marginBottom: "40px",
+              color: "#2D1B14",
+              fontSize: "32px",
+              fontWeight: 600,
+              lineHeight: 1.2,
+              letterSpacing: 0,
+            }}
+          >
+            Everything you need to grow
+          </h2>
+
+          <div
+            className="growth-feature-grid"
+          >
+            {features.map(({ Icon, title, description }, index) => (
+              <div
+                key={title}
+                style={{
+                  position: "relative",
+                  textAlign: "center",
+                }}
+              >
+                {index < features.length - 1 ? (
+                  <span
+                    aria-hidden="true"
+                    className="growth-feature-divider"
+                    style={{
+                      position: "absolute",
+                      top: 0,
+                      right: "-24px",
+                      width: "1px",
+                      height: "120px",
+                      background: "rgba(139,94,60,0.12)",
+                    }}
+                  />
+                ) : null}
+
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    width: "48px",
+                    height: "48px",
+                    margin: "0 auto",
+                    borderRadius: "999px",
+                    background: "#EFE5DA",
+                    color: "#8B5E3C",
+                  }}
+                >
+                  <Icon size={22} strokeWidth={2} />
+                </div>
+
+                <h3
+                  style={{
+                    marginTop: "16px",
+                    color: "#2D1B14",
+                    fontSize: "20px",
+                    fontWeight: 600,
+                    lineHeight: 1.3,
+                    letterSpacing: 0,
+                  }}
+                >
+                  {title}
+                </h3>
+
+                <p
+                  style={{
+                    maxWidth: "220px",
+                    margin: "8px auto 0",
+                    color: "#6A5648",
+                    fontSize: "15px",
+                    lineHeight: 1.7,
+                  }}
+                >
+                  {description}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
     </main>
-  );
-}
-
-function Stat({
-  value,
-  label,
-}: {
-  value: string;
-  label: string;
-}) {
-  return (
-    <div>
-      <div
-        style={{
-          fontSize: "38px",
-          marginBottom: "4px",
-        }}
-      >
-        {value}
-      </div>
-
-      <div
-        style={{
-          color: "var(--text-secondary)",
-        }}
-      >
-        {label}
-      </div>
-    </div>
   );
 }

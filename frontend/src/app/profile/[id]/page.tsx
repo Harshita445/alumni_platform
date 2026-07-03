@@ -22,13 +22,13 @@ export default function ProfilePage() {
   const { user } = useAuth();
   const [alumni, setAlumni] = useState<Alumni | null>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
-  const [loading, setLoading] = useState(Boolean(user));
+  const [loading, setLoading] = useState(true);
   const [reviewsLoading, setReviewsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [reviewsError, setReviewsError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!user || !params.id) {
+    if (!params.id) {
       return;
     }
 
@@ -40,7 +40,7 @@ export default function ProfilePage() {
       try {
         const result = await fetchAlumniDetails(
           params.id,
-          user.access_token
+          user?.access_token
         );
 
         if (active) {
@@ -55,7 +55,7 @@ export default function ProfilePage() {
         try {
           const reviewResult = await fetchAlumniReviews(
             params.id,
-            user.access_token
+            user?.access_token
           );
 
           if (active) {
@@ -95,19 +95,6 @@ export default function ProfilePage() {
       active = false;
     };
   }, [params.id, user]);
-
-  if (!user) {
-    return (
-      <CenteredState
-        title="Log in to view profiles"
-        message="You need to be signed in to open alumni profile details."
-      >
-        <Link href="/login" style={primaryLinkStyle}>
-          Go to Login
-        </Link>
-      </CenteredState>
-    );
-  }
 
   if (loading) {
     return (
@@ -230,12 +217,16 @@ export default function ProfilePage() {
             )}
           </div>
 
-          {user.role === "student" ? (
+          {user?.role === "student" ? (
             <Link
               href={`/bookings?alumni_id=${alumni.id}`}
               style={primaryLinkStyle}
             >
               Book Session
+            </Link>
+          ) : !user ? (
+            <Link href="/login" style={primaryLinkStyle}>
+              Log in or sign up to book a session
             </Link>
           ) : null}
         </div>

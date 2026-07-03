@@ -20,40 +20,50 @@ export default function Navbar() {
         position: "sticky",
         top: 0,
         zIndex: 100,
-        background: "rgba(245, 238, 229, 0.95)",
+        background: "rgba(247, 241, 235, 0.96)",
         backdropFilter: "blur(12px)",
         borderBottom: "1px solid var(--border)",
       }}
     >
       <nav
         style={{
-          maxWidth: "var(--container-width)",
+          width: "100%",
+          maxWidth: "1440px",
           margin: "0 auto",
-          padding: "18px 24px",
+          minHeight: "100px",
+          padding: "12px 52px",
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          gap: "24px",
+          gap: "36px",
           flexWrap: "wrap",
         }}
       >
         <Link
           href="/"
           style={{
-            fontSize: "28px",
-            fontWeight: 600,
-            color: "var(--text-primary)",
+            display: "inline-flex",
+            alignItems: "center",
+            textDecoration: "none",
+            flex: "0 0 auto",
           }}
         >
-          Alumly
+          <img
+            src="/logo.svg"
+            alt="Alumly logo"
+            style={{ height: 68, width: "auto" }}
+          />
         </Link>
 
         <div
           style={{
             display: "flex",
-            gap: "24px",
-            flexWrap: "wrap",
+            gap: "38px",
             alignItems: "center",
+            flexWrap: "wrap",
+            justifyContent: "center",
+            flex: "1 1 auto",
+            fontSize: "16px",
           }}
         >
           <Link href="/search">Explore</Link>
@@ -69,6 +79,9 @@ export default function Navbar() {
             gap: "16px",
             alignItems: "center",
             flexWrap: "wrap",
+            justifyContent: "flex-end",
+            flex: "0 0 auto",
+            fontSize: "16px",
           }}
         >
           {user ? (
@@ -96,7 +109,20 @@ export default function Navbar() {
           ) : (
             <>
               <Link href="/login">Login</Link>
-              <Link href="/register">Register</Link>
+              <Link
+                href="/register"
+                style={{
+                  minWidth: "108px",
+                  padding: "12px 22px",
+                  borderRadius: "10px",
+                  background: "var(--primary)",
+                  color: "#fff",
+                  textAlign: "center",
+                  fontWeight: 600,
+                }}
+              >
+                Register
+              </Link>
             </>
           )}
         </div>

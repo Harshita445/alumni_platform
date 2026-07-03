@@ -3,6 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 
+import { useAuth } from "@/hooks/useAuth";
 import { useSavedAlumni } from "@/hooks/useSavedAlumni";
 
 type Props = {
@@ -20,6 +21,7 @@ export default function AlumniCard({
   company,
   role,
 }: Props) {
+  const { user } = useAuth();
   const { toggleSave, isSaved, canSave } = useSavedAlumni();
   const saved = isSaved(id);
 
@@ -105,6 +107,27 @@ export default function AlumniCard({
           >
             {saved ? "Saved" : "Save"}
           </button>
+        ) : null}
+
+        {!user ? (
+          <Link
+            href="/login"
+            style={{
+              background: "var(--surface)",
+              color: "var(--text-primary)",
+              border: "1px solid var(--border)",
+              borderRadius: "var(--radius-md)",
+              padding: "12px 18px",
+              textDecoration: "none",
+              minHeight: "44px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontWeight: 500,
+            }}
+          >
+            Log in to book a session
+          </Link>
         ) : null}
 
         <Link

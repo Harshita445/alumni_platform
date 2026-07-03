@@ -442,3 +442,18 @@ export async function markNotificationRead(
     headers: getAuthHeaders(token),
   });
 }
+
+// Password reset helpers
+export async function requestPasswordReset(email: string) {
+  return request("/auth/password-reset/request", {
+    method: "POST",
+    body: JSON.stringify({ email }),
+  }) as Promise<{ message: string; token?: string } | { message: string }>;
+}
+
+export async function confirmPasswordReset(token: string, new_password: string) {
+  return request("/auth/password-reset/confirm", {
+    method: "POST",
+    body: JSON.stringify({ token, new_password }),
+  }) as Promise<{ message: string }>;
+}

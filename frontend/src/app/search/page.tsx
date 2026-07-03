@@ -18,10 +18,6 @@ export default function SearchPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!user) {
-      return;
-    }
-
     let active = true;
 
     const loadAlumni = async () => {
@@ -29,7 +25,7 @@ export default function SearchPage() {
       setError(null);
 
       try {
-        const result = await fetchAlumni(user.access_token);
+        const result = await fetchAlumni(user?.access_token);
         if (active) {
           setAlumni(result);
         }
@@ -70,44 +66,6 @@ export default function SearchPage() {
       );
     });
   }, [alumni, companyFilter, roleFilter]);
-
-  if (!user) {
-    return (
-      <main
-        style={{
-          maxWidth: "600px",
-          margin: "80px auto",
-          padding: "40px 24px",
-          textAlign: "center",
-        }}
-      >
-        <h1 style={{ marginBottom: "16px" }}>
-          Log in to explore alumni
-        </h1>
-        <p
-          style={{
-            color: "var(--text-secondary)",
-            marginBottom: "24px",
-          }}
-        >
-          You need to be signed in to browse alumni profiles.
-        </p>
-        <button
-          onClick={() => router.push("/login")}
-          style={{
-            background: "var(--primary)",
-            color: "#fff",
-            border: "none",
-            padding: "14px 24px",
-            borderRadius: "var(--radius-md)",
-            cursor: "pointer",
-          }}
-        >
-          Go to Login
-        </button>
-      </main>
-    );
-  }
 
   return (
     <main

@@ -4,6 +4,16 @@ export function isThaparStudentEmail(
   return /_be\d{2}@thapar\.edu$/i.test(email);
 }
 
+export function isThaparAlumniCandidateEmail(
+  email: string
+) {
+  const localPart = (email.split("@")[0] || "").toLowerCase();
+  return (
+    email.toLowerCase().endsWith("@thapar.edu") &&
+    /_be2[3456](?:$|_)/i.test(localPart)
+  );
+}
+
 export function getAdmissionYear(
   email: string
 ) {

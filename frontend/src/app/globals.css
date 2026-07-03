@@ -1,3 +1,4 @@
+@import "tailwindcss";
 :root {
   /* Backgrounds */
   --background: #e9ddd0;
@@ -97,4 +98,28 @@ button {
 img {
   display: block;
   max-width: 100%;
+}
+
+.growth-feature-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 48px;
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .growth-feature-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .growth-feature-divider {
+    display: none;
+  }
+}
+
+@media (max-width: 560px) {
+  .growth-feature-grid {
+    grid-template-columns: 1fr;
+    gap: 32px;
+  }
 }

@@ -7,6 +7,7 @@ import {
   getAdmissionYear,
   getGraduationYear,
   isThaparStudentEmail,
+  isThaparAlumniCandidateEmail,
 } from "@/lib/auth";
 import {
   googleAuth,
@@ -73,6 +74,13 @@ export default function StudentRegisterPage() {
 
   const handleSubmit = async () => {
     setError(null);
+
+    if (isThaparAlumniCandidateEmail(email)) {
+      setError(
+        "This email looks like an alumni email. Please register as an alumni instead."
+      );
+      return;
+    }
 
     if (!isThaparStudentEmail(email)) {
       setError("Enter a valid Thapar student email.");

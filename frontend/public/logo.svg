@@ -1,0 +1,52 @@
+<svg width="280" height="90" viewBox="0 0 280 90" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="logoTitle">
+  <title id="logoTitle">Alumly - Connect, Grow, Inspire</title>
+  <defs>
+    <linearGradient id="alumlyMark" x1="6" y1="45" x2="103" y2="45" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#6A4430"/>
+      <stop offset="1" stop-color="#C79A72"/>
+    </linearGradient>
+    <linearGradient id="alumlyWord" x1="108" y1="45" x2="270" y2="45" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#5F3D2B"/>
+      <stop offset="0.72" stop-color="#7A4D35"/>
+      <stop offset="1" stop-color="#C7976F"/>
+    </linearGradient>
+  </defs>
+
+  <circle cx="26" cy="20" r="9" fill="#6A4430"/>
+  <circle cx="70" cy="20" r="9" fill="#C7976F"/>
+
+  <path
+    d="M11 67L29 31C31 27 35 27 38 31L52 50C54 53 57 54 60 52L77 42C81 40 85 41 88 45L102 67H82L74 54L62 61C53 66 43 63 38 55L33 47L23 67H11Z"
+    fill="url(#alumlyMark)"
+  />
+  <path
+    d="M35 42C43 53 55 57 70 46"
+    stroke="#F7F1EB"
+    stroke-width="7"
+    stroke-linecap="round"
+  />
+
+  <text
+    x="110"
+    y="61"
+    fill="url(#alumlyWord)"
+    font-family="'Arial Rounded MT Bold', 'Trebuchet MS', Inter, system-ui, sans-serif"
+    font-size="52"
+    font-weight="700"
+    letter-spacing="-2"
+  >
+    Alumly
+  </text>
+
+  <text
+    x="27"
+    y="83"
+    fill="#6A4430"
+    font-family="Inter, Arial, system-ui, sans-serif"
+    font-size="10"
+    font-weight="700"
+    letter-spacing="4.3"
+  >
+    CONNECT &#8226; GROW &#8226; INSPIRE
+  </text>
+</svg>
