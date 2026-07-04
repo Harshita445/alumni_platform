@@ -1,0 +1,161 @@
+/* =====================================================
+   ALUMNI CARD - PREMIUM MODERN DESIGN
+   ===================================================== */
+
+.alumniCard {
+  background: white;
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  box-shadow: 0 4px 16px rgba(47, 33, 26, 0.04);
+  transition: all 0.3s ease;
+  height: 100%;
+}
+
+.alumniCard:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 16px 40px rgba(47, 33, 26, 0.12);
+  border-color: var(--primary);
+}
+
+/* PROFILE SECTION */
+
+.profileSection {
+  display: flex;
+  gap: 18px;
+  flex: 1;
+}
+
+.profileImage {
+  flex-shrink: 0;
+}
+
+.profileImageElement {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid var(--border);
+}
+
+.profileInfo {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.profileName {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 6px;
+  line-height: 1.3;
+}
+
+.profileRole {
+  font-size: 14px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin-bottom: 4px;
+}
+
+.profileCompany {
+  font-size: 13px;
+  color: var(--primary);
+  font-weight: 600;
+}
+
+/* ACTIONS SECTION */
+
+.actionsSection {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+}
+
+.primaryButton {
+  width: 100%;
+  height: 48px;
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+}
+
+.primaryButton:hover {
+  background: var(--primary-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(106, 68, 48, 0.16);
+}
+
+.secondaryButton {
+  width: 100%;
+  height: 48px;
+  background: white;
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+}
+
+.secondaryButton:hover {
+  background: var(--surface);
+  border-color: var(--primary);
+  color: var(--primary);
+  transform: translateY(-2px);
+}
+
+.secondaryButton.saved {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.secondaryButton.saved:hover {
+  background: rgba(193, 111, 61, 0.04);
+  border-color: var(--accent);
+}
+
+/* RESPONSIVE DESIGN */
+
+@media (max-width: 768px) {
+  .alumniCard {
+    padding: 24px;
+    gap: 20px;
+  }
+
+  .profileImageElement {
+    width: 72px;
+    height: 72px;
+  }
+
+  .profileName {
+    font-size: 16px;
+  }
+
+  .primaryButton,
+  .secondaryButton {
+    height: 44px;
+    font-size: 14px;
+  }
+}

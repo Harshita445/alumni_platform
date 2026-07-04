@@ -3,9 +3,11 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
+import AccessGateCard from "@/components/AccessGateCard";
 import Badge from "@/components/Badge";
 import { useAuth } from "@/hooks/useAuth";
 import { BookingStatus, fetchDashboard } from "@/lib/api";
+import { LayoutDashboard } from "lucide-react";
 
 type RecentBooking = {
   id: number;
@@ -75,39 +77,18 @@ export default function DashboardPage() {
 
   if (!user) {
     return (
-      <main
-        style={{
-          maxWidth: "600px",
-          margin: "80px auto",
-          padding: "40px 24px",
-          textAlign: "center",
-        }}
-      >
-        <h1 style={{ marginBottom: "16px" }}>
-          Please log in to view your dashboard
-        </h1>
-        <p
-          style={{
-            color: "var(--text-secondary)",
-            marginBottom: "24px",
-          }}
-        >
-          Your personalized session summary is available after login.
-        </p>
-        <button
-          onClick={() => router.push("/login")}
-          style={{
-            background: "var(--primary)",
-            color: "#fff",
-            border: "none",
-            padding: "14px 24px",
-            borderRadius: "var(--radius-md)",
-            cursor: "pointer",
-          }}
-        >
-          Go to Login
-        </button>
-      </main>
+      <AccessGateCard
+        icon={LayoutDashboard}
+        title="Login to access your dashboard"
+        description="Track mentorship sessions, manage your activity, and stay connected with the alumni network."
+        bullets={[
+          "View your activity",
+          "Track mentorship sessions",
+          "Manage your profile",
+        ]}
+        buttonLabel="Go to Login"
+        onClick={() => router.push("/login")}
+      />
     );
   }
 

@@ -103,8 +103,8 @@ export default function HomePage() {
           </div>
 
           <div className="hero-actions">
-            <Link className="btn btn-primary" href="/search">
-              Find a mentor
+            <Link className="btn btn-primary" href="/mentorship">
+              Explore mentorship
             </Link>
 
             <Link className="btn btn-secondary" href="/register">

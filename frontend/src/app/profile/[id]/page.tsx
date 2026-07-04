@@ -9,9 +9,12 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import {
   Alumni,
+  AvailabilitySlot,
   Review,
   fetchAlumniDetails,
   fetchAlumniReviews,
+  fetchAvailability,
+  fetchMentorshipServices,
 } from "@/lib/api";
 
 const FALLBACK_IMAGE =
@@ -24,6 +27,14 @@ export default function ProfilePage() {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
   const [reviewsLoading, setReviewsLoading] = useState(false);
+  const [services, setServices] = useState<{ service_type: string; price: number | null }[]>([]);
+  const [availability, setAvailability] = useState<AvailabilitySlot[]>([]);
+  const [selectedDate, setSelectedDate] = useState<string>("");
+  const [selectedTime, setSelectedTime] = useState<string>("");
+  const [selectedService, setSelectedService] = useState<string>("");
+  const [message, setMessage] = useState("");
+  const [submitting, setSubmitting] = useState(false);
+  const [success, setSuccess] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [reviewsError, setReviewsError] = useState<string | null>(null);
 
@@ -53,6 +64,21 @@ export default function ProfilePage() {
         }
 
         try {
+          const serviceResult = await fetchMentorshipServices(params.id, user?.access_token);
+          if (active) {
+            setServices(serviceResult.filter((item) => item.is_enabled).map((item) => ({ service_type: item.service_type, price: item.price ? Number(item.price) : null })));
+            setSelectedService(serviceResult.find((item) => item.is_enabled)?.service_type || "");
+          }
+
+          const availabilityResult = await fetchAvailability(params.id, user?.access_token);
+          if (active) {
+            const upcoming = availabilityResult.filter((slot) => slot.day_of_week !== null && slot.day_of_week !== undefined);
+            setAvailability(upcoming);
+            if (upcoming.length > 0) {
+              setSelectedTime(upcoming[0].start_time);
+            }
+          }
+
           const reviewResult = await fetchAlumniReviews(
             params.id,
             user?.access_token
@@ -95,6 +121,53 @@ export default function ProfilePage() {
       active = false;
     };
   }, [params.id, user]);
+
+  const handleBookingRequest = async () => {
+    if (!user || !alumni) {
+      setError("Please log in to request a mentorship session.");
+      return;
+    }
+
+    if (!selectedService || !selectedDate || !selectedTime) {
+      setError("Choose a session type, date, and time to continue.");
+      return;
+    }
+
+    setSubmitting(true);
+    setError(null);
+    setSuccess(null);
+
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/bookings`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${user.access_token}`,
+        },
+        body: JSON.stringify({
+          alumni_id: alumni.id,
+          session_type: selectedService,
+          date: selectedDate,
+          time: selectedTime,
+          message,
+        }),
+      });
+
+      if (!response.ok) {
+        const payload = await response.json().catch(() => ({}));
+        throw new Error(payload.detail || "Unable to request this session.");
+      }
+
+      setSuccess("Your session request has been submitted and is awaiting mentor approval.");
+      setMessage("");
+      setSelectedDate("");
+      setSelectedTime("");
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Unable to request this session.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -216,21 +289,75 @@ export default function ProfilePage() {
               <span>Not specified</span>
             )}
           </div>
-
-          {user?.role === "student" ? (
-            <Link
-              href={`/bookings?alumni_id=${alumni.id}`}
-              style={primaryLinkStyle}
-            >
-              Book Session
-            </Link>
-          ) : !user ? (
-            <Link href="/login" style={primaryLinkStyle}>
-              Log in or sign up to book a session
-            </Link>
-          ) : null}
         </div>
       </div>
+
+      <section style={{ ...cardStyle, marginTop: "24px" }}>
+        <h2 style={{ marginBottom: "16px" }}>Mentorship Services</h2>
+        {services.length > 0 ? (
+          <div style={{ display: "grid", gap: "12px" }}>
+            {services.map((service) => (
+              <div key={service.service_type} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", border: "1px solid var(--border)", borderRadius: "12px", padding: "12px 14px" }}>
+                <span>{service.service_type}</span>
+                <strong>{service.price ? `₹${service.price}` : "Free"}</strong>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p style={{ color: "var(--text-secondary)" }}>No mentorship services have been configured yet.</p>
+        )}
+      </section>
+
+      <section style={{ ...cardStyle, marginTop: "24px" }}>
+        <h2 style={{ marginBottom: "16px" }}>Availability Calendar</h2>
+        {availability.length > 0 ? (
+          <div style={{ display: "grid", gap: "12px" }}>
+            {availability.map((slot) => (
+              <div key={slot.id} style={{ border: "1px solid var(--border)", borderRadius: "12px", padding: "12px 14px" }}>
+                <strong>{slot.day_of_week !== null && slot.day_of_week !== undefined ? ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"][slot.day_of_week] : "Date"}</strong>
+                <div style={{ color: "var(--text-secondary)", marginTop: "6px" }}>{slot.start_time} - {slot.end_time}</div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p style={{ color: "var(--text-secondary)" }}>This mentor has not shared availability yet.</p>
+        )}
+      </section>
+
+      <section style={{ ...cardStyle, marginTop: "24px" }}>
+        <h2 style={{ marginBottom: "16px" }}>Request a Session</h2>
+        {user?.role === "student" ? (
+          <div style={{ display: "grid", gap: "16px" }}>
+            <label style={{ display: "grid", gap: "8px" }}>
+              <span style={metaLabelStyle}>Session Type</span>
+              <select value={selectedService} onChange={(event) => setSelectedService(event.target.value)} style={inputStyle}>
+                {services.length > 0 ? services.map((service) => <option key={service.service_type} value={service.service_type}>{service.service_type}</option>) : <option value="">No services available</option>}
+              </select>
+            </label>
+            <label style={{ display: "grid", gap: "8px" }}>
+              <span style={metaLabelStyle}>Select a Date</span>
+              <input type="date" value={selectedDate} onChange={(event) => setSelectedDate(event.target.value)} style={inputStyle} />
+            </label>
+            <label style={{ display: "grid", gap: "8px" }}>
+              <span style={metaLabelStyle}>Selected Time</span>
+              <input type="time" value={selectedTime} onChange={(event) => setSelectedTime(event.target.value)} style={inputStyle} />
+            </label>
+            <label style={{ display: "grid", gap: "8px" }}>
+              <span style={metaLabelStyle}>What would you like help with?</span>
+              <textarea value={message} onChange={(event) => setMessage(event.target.value)} placeholder="Share a little about your goals..." style={{ ...inputStyle, minHeight: "96px" }} />
+            </label>
+            {error ? <p style={{ color: "var(--danger)" }}>{error}</p> : null}
+            {success ? <p style={{ color: "var(--success)" }}>{success}</p> : null}
+            <button onClick={handleBookingRequest} disabled={submitting} style={{ ...primaryLinkStyle, width: "100%", cursor: submitting ? "not-allowed" : "pointer" }}>
+              {submitting ? "Submitting..." : "Request Session"}
+            </button>
+          </div>
+        ) : !user ? (
+          <Link href="/login" style={primaryLinkStyle}>Log in to request a session</Link>
+        ) : (
+          <p style={{ color: "var(--text-secondary)" }}>Only students can request mentorship sessions.</p>
+        )}
+      </section>
 
       <section
         style={{
@@ -349,6 +476,17 @@ const cardStyle = {
 const metaLabelStyle = {
   color: "var(--text-secondary)",
   marginBottom: "4px",
+};
+
+const inputStyle = {
+  width: "100%",
+  padding: "14px 16px",
+  borderRadius: "var(--radius-md)",
+  border: "1px solid var(--border)",
+  background: "var(--background)",
+  color: "var(--text-primary)",
+  fontSize: "15px",
+  outline: "none",
 };
 
 const primaryLinkStyle = {

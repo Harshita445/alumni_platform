@@ -1,0 +1,362 @@
+/* AUTH PAGES - REFERENCE STYLING
+   
+   This file contains the premium auth page styling provided.
+   Apply these classes to your auth pages (login, register, forgot-password, reset-password)
+   
+   To use:
+   1. Create/update frontend/src/app/auth/auth.module.css
+   2. Import in your auth page components
+   3. Update JSX to use these class names
+   
+   Example usage in page.tsx:
+   import styles from '@/app/auth/auth.module.css'
+   
+   <main className={styles.authPage}>
+     <div className={styles.authCard}>
+       <div className={styles.authBrandPanel}>...</div>
+       <div className={styles.authFormPanel}>...</div>
+     </div>
+   </main>
+*/
+
+/* PAGE BACKGROUND */
+
+.authPage {
+  min-height: 100vh;
+  background: #f6efe7;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* subtle corner decorations */
+
+.authBgPatternOne,
+.authBgPatternTwo {
+  position: absolute;
+  opacity: 0.06;
+  pointer-events: none;
+}
+
+.authBgPatternOne {
+  width: 300px;
+  height: 300px;
+  top: -50px;
+  left: -50px;
+  border-radius: 50%;
+  border: 2px solid #8a5a3b;
+}
+
+.authBgPatternTwo {
+  width: 250px;
+  height: 250px;
+  bottom: -40px;
+  right: -40px;
+  border-radius: 50%;
+  border: 2px solid #8a5a3b;
+}
+
+/* MAIN CARD */
+
+.authCard {
+  width: 100%;
+  max-width: 1400px;
+  min-height: 800px;
+
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+
+  background: #fbf7f2;
+
+  border-radius: 32px;
+  overflow: hidden;
+
+  box-shadow:
+    0 30px 60px rgba(70, 45, 25, 0.08),
+    0 8px 20px rgba(70, 45, 25, 0.04);
+}
+
+/* LEFT PANEL */
+
+.authBrandPanel {
+  position: relative;
+  overflow: hidden;
+}
+
+.authCampusImage {
+  position: absolute;
+  inset: 0;
+
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.authBrandOverlay {
+  position: absolute;
+  inset: 0;
+
+  background:
+    linear-gradient(
+      rgba(85, 52, 34, 0.65),
+      rgba(85, 52, 34, 0.55)
+    );
+}
+
+.authBrandContent {
+  position: relative;
+  z-index: 2;
+
+  height: 100%;
+
+  display: flex;
+  flex-direction: column;
+
+  padding: 56px;
+}
+
+.authLogo {
+  width: 160px;
+  height: auto;
+}
+
+.authBrandKicker {
+  margin-top: 24px;
+  color: rgba(255,255,255,0.95);
+
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.authBrandContent h2 {
+  margin-top: auto;
+
+  color: white;
+
+  font-size: 64px;
+  line-height: 1.05;
+  font-weight: 700;
+}
+
+.authBrandContent p:last-child {
+  margin-top: 16px;
+
+  color: rgba(255,255,255,0.92);
+
+  max-width: 420px;
+
+  font-size: 22px;
+  line-height: 1.7;
+}
+
+/* RIGHT PANEL */
+
+.authFormPanel {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+
+  padding: 80px 90px;
+
+  background: #fbf7f2;
+}
+
+.authHeader h1 {
+  margin: 0;
+
+  font-size: 64px;
+  line-height: 1.05;
+
+  color: #2f1b12;
+}
+
+.authHeader p {
+  margin-top: 18px;
+  margin-bottom: 48px;
+
+  color: #75685f;
+
+  font-size: 22px;
+}
+
+/* FORM */
+
+.authField {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.authField span {
+  color: #2f1b12;
+  font-weight: 600;
+}
+
+.authInputWrap {
+  display: flex;
+  align-items: center;
+
+  height: 60px;
+
+  padding: 0 18px;
+
+  border: 1px solid #e1d5ca;
+  border-radius: 16px;
+
+  background: white;
+
+  transition: all .25s ease;
+}
+
+.authInputWrap:focus-within {
+  border-color: #8a5a3b;
+  box-shadow: 0 0 0 4px rgba(138,90,59,0.08);
+}
+
+.authInputWrap svg {
+  color: #98785f;
+  flex-shrink: 0;
+}
+
+.authInput {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+
+  padding-left: 14px;
+
+  font-size: 16px;
+}
+
+/* LOGIN BUTTON */
+
+.authPrimaryButton {
+  width: 100%;
+  height: 60px;
+
+  border: none;
+  border-radius: 16px;
+
+  color: white;
+  font-size: 18px;
+  font-weight: 600;
+
+  background:
+    linear-gradient(
+      135deg,
+      #7a4b2e,
+      #925b38
+    );
+
+  box-shadow:
+    0 12px 24px rgba(122,75,46,.18);
+
+  cursor: pointer;
+
+  transition: all .25s ease;
+}
+
+.authPrimaryButton:hover {
+  transform: translateY(-2px);
+}
+
+/* DIVIDER */
+
+.authSeparator {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.authSeparator span {
+  flex: 1;
+  height: 1px;
+  background: #e4d8cd;
+}
+
+.authSeparator strong {
+  color: #7f7067;
+  font-size: 14px;
+  text-transform: uppercase;
+}
+
+/* GOOGLE BUTTONS */
+
+.authGoogleButton {
+  height: 60px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+
+  background: white;
+
+  border: 1px solid #e1d5ca;
+  border-radius: 16px;
+
+  font-size: 16px;
+  font-weight: 600;
+
+  cursor: pointer;
+
+  transition: all .25s ease;
+}
+
+.authGoogleButton:hover {
+  transform: translateY(-2px);
+
+  box-shadow:
+    0 8px 18px rgba(0,0,0,.06);
+}
+
+.googleMark {
+  font-weight: 700;
+  color: #4285f4;
+}
+
+/* FOOTER */
+
+.authFooter {
+  margin-top: 8px;
+
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+
+  color: #75685f;
+}
+
+.authFooter a {
+  color: #8a5a3b;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+/* RESPONSIVE */
+
+@media (max-width: 1100px) {
+  .authCard {
+    grid-template-columns: 1fr;
+  }
+
+  .authBrandPanel {
+    min-height: 350px;
+  }
+
+  .authFormPanel {
+    padding: 48px;
+  }
+
+  .authHeader h1 {
+    font-size: 48px;
+  }
+
+  .authBrandContent h2 {
+    font-size: 48px;
+  }
+}

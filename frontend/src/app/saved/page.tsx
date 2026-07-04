@@ -3,9 +3,11 @@
 import Link from "next/link";
 import type React from "react";
 
+import AccessGateCard from "@/components/AccessGateCard";
 import AlumniCard from "@/components/AlumniCard";
 import { useAuth } from "@/hooks/useAuth";
 import { useSavedAlumni } from "@/hooks/useSavedAlumni";
+import { UserRound } from "lucide-react";
 
 export default function SavedPage() {
   const { user } = useAuth();
@@ -29,14 +31,18 @@ export default function SavedPage() {
       </h1>
 
       {!user ? (
-        <EmptyPanel
-          title="Log in to view saved alumni"
-          message="Your saved mentors are tied to your student account."
-        >
-          <Link href="/login" style={primaryLinkStyle}>
-            Go to Login
-          </Link>
-        </EmptyPanel>
+        <AccessGateCard
+          icon={UserRound}
+          title="Login to view saved alumni"
+          description="Your saved mentors are tied to your student account."
+          bullets={[
+            "Keep mentors handy",
+            "Revisit conversations later",
+            "Stay connected to your shortlist",
+          ]}
+          buttonLabel="Go to Login"
+          href="/login"
+        />
       ) : user.role !== "student" ? (
         <EmptyPanel
           title="Saved alumni is for students"

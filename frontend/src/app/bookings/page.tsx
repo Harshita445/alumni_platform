@@ -3,9 +3,11 @@
 import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
+import AccessGateCard from "@/components/AccessGateCard";
 import BookingManagement from "@/components/BookingManagement";
 import { useAuth } from "@/hooks/useAuth";
 import { Alumni, createBooking, fetchAlumni } from "@/lib/api";
+import { CalendarDays } from "lucide-react";
 
 const labelStyle = {
   display: "block",
@@ -150,41 +152,18 @@ function BookingPageContent() {
 
   if (!user) {
     return (
-      <main
-        style={{
-          maxWidth: "600px",
-          margin: "80px auto",
-          padding: "40px 24px",
-          textAlign: "center",
-        }}
-      >
-        <h1 style={{ marginBottom: "16px" }}>
-          Log in to book a session
-        </h1>
-
-        <p
-          style={{
-            color: "var(--text-secondary)",
-            marginBottom: "24px",
-          }}
-        >
-          You need an account to request a mentorship session.
-        </p>
-
-        <button
-          onClick={() => router.push("/login")}
-          style={{
-            background: "var(--primary)",
-            color: "#fff",
-            border: "none",
-            padding: "14px 24px",
-            borderRadius: "var(--radius-md)",
-            cursor: "pointer",
-          }}
-        >
-          Go to Login
-        </button>
-      </main>
+      <AccessGateCard
+        icon={CalendarDays}
+        title="Login to book mentorship sessions"
+        description="Request mentorship sessions and connect with experienced alumni."
+        bullets={[
+          "Request mentorship sessions",
+          "Connect with alumni",
+          "Manage upcoming meetings",
+        ]}
+        buttonLabel="Go to Login"
+        onClick={() => router.push("/login")}
+      />
     );
   }
 

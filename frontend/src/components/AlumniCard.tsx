@@ -5,6 +5,7 @@ import Link from "next/link";
 
 import { useAuth } from "@/hooks/useAuth";
 import { useSavedAlumni } from "@/hooks/useSavedAlumni";
+import styles from "./AlumniCard.module.css";
 
 type Props = {
   id: number;
@@ -26,127 +27,58 @@ export default function AlumniCard({
   const saved = isSaved(id);
 
   return (
-    <div
-      style={{
-        background: "var(--surface)",
-        border: "1px solid var(--border)",
-        borderRadius: "var(--radius-lg)",
-        padding: "24px",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "space-between",
-        gap: "20px",
-        flexWrap: "wrap",
-        boxShadow: "var(--shadow-sm)",
-      }}
-    >
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: "18px",
-          flex: 1,
-          minWidth: "260px",
-        }}
-      >
-        <Image
-          src={profileImage}
-          alt={name}
-          width={72}
-          height={72}
-          style={{
-            borderRadius: "50%",
-            objectFit: "cover",
-          }}
-        />
+    <div className={styles.alumniCard}>
+      {/* PROFILE SECTION */}
+      <div className={styles.profileSection}>
+        <div className={styles.profileImage}>
+          <Image
+            src={profileImage}
+            alt={name}
+            width={80}
+            height={80}
+            className={styles.profileImageElement}
+          />
+        </div>
 
-        <div>
-          <h3
-            style={{
-              marginBottom: "6px",
-            }}
-          >
-            {name}
-          </h3>
-
-          <p
-            style={{
-              color: "var(--text-secondary)",
-            }}
-          >
-            {role} - {company}
-          </p>
+        <div className={styles.profileInfo}>
+          <h3 className={styles.profileName}>{name}</h3>
+          <p className={styles.profileRole}>{role}</p>
+          <p className={styles.profileCompany}>{company}</p>
         </div>
       </div>
 
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: "12px",
-          flexWrap: "wrap",
-        }}
-      >
-        {canSave ? (
+      {/* ACTIONS SECTION */}
+      <div className={styles.actionsSection}>
+        {/* PRIMARY CTA: Book Session / View Profile */}
+        <Link
+          href={`/profile/${id}`}
+          className={styles.primaryButton}
+        >
+          Book Session
+        </Link>
+
+        {/* SAVE BUTTON */}
+        {canSave && (
           <button
             onClick={() => toggleSave(id)}
             aria-pressed={saved}
-            style={{
-              background: "transparent",
-              border: "1px solid var(--border)",
-              borderRadius: "var(--radius-md)",
-              padding: "12px 16px",
-              cursor: "pointer",
-              minHeight: "44px",
-              fontSize: "15px",
-              color: saved
-                ? "var(--accent)"
-                : "var(--text-secondary)",
-              transition: "0.2s ease",
-            }}
+            className={`${styles.secondaryButton} ${
+              saved ? styles.saved : ""
+            }`}
           >
-            {saved ? "Saved" : "Save"}
+            {saved ? "✓ Saved" : "Save Alumnus"}
           </button>
-        ) : null}
+        )}
 
-        {!user ? (
+        {/* LOGIN PROMPT */}
+        {!user && (
           <Link
             href="/login"
-            style={{
-              background: "var(--surface)",
-              color: "var(--text-primary)",
-              border: "1px solid var(--border)",
-              borderRadius: "var(--radius-md)",
-              padding: "12px 18px",
-              textDecoration: "none",
-              minHeight: "44px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontWeight: 500,
-            }}
+            className={styles.secondaryButton}
           >
-            Log in to book a session
+            Log in to book
           </Link>
-        ) : null}
-
-        <Link
-          href={`/profile/${id}`}
-          style={{
-            background: "var(--primary)",
-            color: "#FFFFFF",
-            padding: "12px 18px",
-            borderRadius: "var(--radius-md)",
-            textDecoration: "none",
-            minHeight: "44px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            fontWeight: 500,
-          }}
-        >
-          View Profile
-        </Link>
+        )}
       </div>
     </div>
   );

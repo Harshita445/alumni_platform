@@ -318,6 +318,22 @@ function BookingCard({
     ? `Student #${booking.student_id}`
     : `Alumni #${booking.alumni_id}`;
 
+  const statusHistory =
+    booking.status_history?.length
+      ? booking.status_history
+      : [
+          {
+            status: "pending" as BookingStatus,
+            changed_at: booking.created_at,
+            note: "Request submitted",
+          },
+          {
+            status: booking.status,
+            changed_at: booking.created_at,
+            note: getStatusDescriptor(booking.status),
+          },
+        ];
+
   return (
     <article
       style={{
@@ -357,13 +373,57 @@ function BookingCard({
           flexWrap: "wrap",
           color: "var(--text-secondary)",
           marginBottom:
-            canAcceptOrReject || canComplete || canCancel
+            canAcceptOrReject || canComplete || canCancel || booking.message || booking.status_history?.length
               ? "20px"
               : 0,
         }}
       >
         <span>{booking.date}</span>
         <span>{booking.time}</span>
+      </div>
+
+      {booking.message ? (
+        <div
+          style={{
+            background: "var(--background)",
+            border: "1px solid var(--border)",
+            borderRadius: "var(--radius-md)",
+            padding: "14px 16px",
+            marginBottom: "16px",
+          }}
+        >
+          <div style={{ fontWeight: 600, marginBottom: "6px" }}>
+            Message
+          </div>
+          <p style={{ color: "var(--text-secondary)", margin: 0, lineHeight: 1.6 }}>
+            {booking.message}
+          </p>
+        </div>
+      ) : null}
+
+      <div
+        style={{
+          background: "var(--background)",
+          border: "1px solid var(--border)",
+          borderRadius: "var(--radius-md)",
+          padding: "14px 16px",
+          marginBottom: "16px",
+        }}
+      >
+        <div style={{ fontWeight: 600, marginBottom: "10px" }}>
+          Status history
+        </div>
+        <ul style={{ margin: 0, paddingLeft: "18px", display: "grid", gap: "8px" }}>
+          {statusHistory.map((entry, index) => (
+            <li key={`${entry.status}-${index}`} style={{ color: "var(--text-secondary)" }}>
+              <span style={{ color: "var(--text-primary)", fontWeight: 600 }}>
+                {getStatusLabel(entry.status)}
+              </span>
+              {entry.note ? ` · ${entry.note}` : ""}
+              {entry.changed_at ? ` · ${formatTimestamp(entry.changed_at)}` : ""}
+            </li>
+          ))}
+        </ul>
       </div>
 
       {canAcceptOrReject || canComplete || canCancel ? (
@@ -441,6 +501,54 @@ function BookingCard({
       ) : null}
     </article>
   );
+}
+
+function getStatusLabel(status: BookingStatus) {
+  switch (status) {
+    case "pending":
+      return "Pending";
+    case "upcoming":
+      return "Accepted";
+    case "completed":
+      return "Completed";
+    case "cancelled":
+      return "Cancelled";
+    case "rejected":
+      return "Rejected";
+    default:
+      return status;
+  }
+}
+
+function getStatusDescriptor(status: BookingStatus) {
+  switch (status) {
+    case "pending":
+      return "Awaiting mentor response";
+    case "upcoming":
+      return "Session confirmed";
+    case "completed":
+      return "Session completed";
+    case "cancelled":
+      return "Session cancelled";
+    case "rejected":
+      return "Request rejected";
+    default:
+      return "Status updated";
+  }
+}
+
+function formatTimestamp(value?: string | null) {
+  if (!value) {
+    return "";
+  }
+
+  const timestamp = new Date(value);
+
+  if (Number.isNaN(timestamp.getTime())) {
+    return "";
+  }
+
+  return timestamp.toLocaleString();
 }
 
 function ReviewForm({

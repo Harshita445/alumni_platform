@@ -2,47 +2,38 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
 
+import AccessGateCard from "@/components/AccessGateCard";
 import { useAuth } from "@/hooks/useAuth";
-import type { UserProfile } from "@/lib/api";
+import {
+  AvailabilitySlot,
+  UserProfile,
+  createAvailability,
+  deleteAvailability,
+  fetchAvailability,
+  fetchMentorshipServices,
+  upsertMentorshipService,
+} from "@/lib/api";
+import { UserRound } from "lucide-react";
 
 export default function MyProfilePage() {
   const { user } = useAuth();
 
   if (!user) {
     return (
-      <main
-        style={{
-          maxWidth: "600px",
-          margin: "80px auto",
-          padding: "40px 24px",
-          textAlign: "center",
-        }}
-      >
-        <h1 style={{ marginBottom: "16px" }}>
-          Please log in
-        </h1>
-        <p
-          style={{
-            color: "var(--text-secondary)",
-            marginBottom: "24px",
-          }}
-        >
-          Sign in to access your profile.
-        </p>
-        <Link
-          href="/login"
-          style={{
-            display: "inline-block",
-            background: "var(--primary)",
-            color: "#fff",
-            padding: "14px 24px",
-            borderRadius: "var(--radius-md)",
-          }}
-        >
-          Go to Login
-        </Link>
-      </main>
+      <AccessGateCard
+        icon={UserRound}
+        title="Login to access your profile"
+        description="Manage your account information, update your profile details, and stay connected with the Alumly community."
+        bullets={[
+          "View your account information",
+          "Update your profile details",
+          "Manage your mentorship activity",
+        ]}
+        buttonLabel="Go to Login"
+        href="/login"
+      />
     );
   }
 
@@ -198,44 +189,265 @@ function StudentSection({ profile }: { profile: UserProfile }) {
 }
 
 function AlumniSection({ profile }: { profile: UserProfile }) {
+  const { user } = useAuth();
+  const [services, setServices] = useState<string[]>([]);
+  const [pricing, setPricing] = useState<Record<string, string>>({});
+  const [availability, setAvailability] = useState<AvailabilitySlot[]>([]);
+  const [newSlot, setNewSlot] = useState({ dayOfWeek: "1", startTime: "18:00", endTime: "19:00" });
+  const [status, setStatus] = useState("Manage your mentorship settings below.");
+
+  const serviceOptions = [
+    "1:1 Career Guidance",
+    "Mock Interviews",
+    "Resume Reviews",
+    "Group Sessions",
+  ];
+
+  const durationOptions = ["30 Minutes", "60 Minutes", "90 Minutes"];
+
+  const weekdayLabel = (value: number) => ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"][value] || "Day";
+
+  useEffect(() => {
+    if (!user) {
+      return;
+    }
+
+    const loadSettings = async () => {
+      try {
+        const fetchedServices = await fetchMentorshipServices(user.id, user.access_token);
+        setServices(fetchedServices.filter((item) => item.is_enabled).map((item) => item.service_type));
+        const nextPricing = Object.fromEntries(
+          fetchedServices
+            .filter((item) => item.is_enabled)
+            .map((item) => [item.service_type, item.price ? `₹${Number(item.price).toFixed(0)}` : "Free"])
+        );
+        setPricing(nextPricing);
+        const fetchedAvailability = await fetchAvailability(user.id, user.access_token);
+        setAvailability(fetchedAvailability);
+      } catch {
+        setStatus("We could not load the latest mentorship settings right now.");
+      }
+    };
+
+    loadSettings();
+  }, [user]);
+
+  const previewDays = useMemo(() => {
+    const days = Array.from(new Set(availability.map((slot) => slot.day_of_week).filter((value): value is number => value !== null && value !== undefined)));
+    return days.map((value) => weekdayLabel(value)).join(" • ");
+  }, [availability]);
+
+  const handleServiceToggle = async (serviceType: string) => {
+    if (!user) {
+      return;
+    }
+
+    const nextServices = services.includes(serviceType)
+      ? services.filter((item) => item !== serviceType)
+      : [...services, serviceType];
+
+    setServices(nextServices);
+
+    try {
+      await upsertMentorshipService(user.access_token, {
+        alumni_id: user.id,
+        service_type: serviceType,
+        price: pricing[serviceType] && pricing[serviceType] !== "Free" ? Number(pricing[serviceType].replace(/[^0-9]/g, "")) : null,
+        is_enabled: nextServices.includes(serviceType),
+        currency: "INR",
+      });
+      setStatus("Mentorship services updated.");
+    } catch {
+      setStatus("Could not save the selected services.");
+    }
+  };
+
+  const handlePricingChange = async (serviceType: string, value: string) => {
+    if (!user) {
+      return;
+    }
+
+    const nextPricing = { ...pricing, [serviceType]: value };
+    setPricing(nextPricing);
+
+    try {
+      await upsertMentorshipService(user.access_token, {
+        alumni_id: user.id,
+        service_type: serviceType,
+        price: value && value !== "Free" ? Number(value.replace(/[^0-9]/g, "")) : null,
+        is_enabled: services.includes(serviceType),
+        currency: "INR",
+      });
+      setStatus("Pricing updated.");
+    } catch {
+      setStatus("Could not save pricing.");
+    }
+  };
+
+  const handleAddAvailability = async () => {
+    if (!user) {
+      return;
+    }
+
+    try {
+      const created = await createAvailability(user.access_token, {
+        day_of_week: Number(newSlot.dayOfWeek),
+        start_time: newSlot.startTime,
+        end_time: newSlot.endTime,
+        timezone: "Asia/Kolkata",
+      });
+      setAvailability((current) => [...current, created]);
+      setStatus("Availability slot added.");
+    } catch {
+      setStatus("Could not save the availability slot.");
+    }
+  };
+
+  const handleDeleteAvailability = async (availabilityId: number) => {
+    if (!user) {
+      return;
+    }
+
+    try {
+      await deleteAvailability(user.access_token, availabilityId);
+      setAvailability((current) => current.filter((slot) => slot.id !== availabilityId));
+      setStatus("Availability slot removed.");
+    } catch {
+      setStatus("Could not remove the availability slot.");
+    }
+  };
+
   return (
-    <div
-      style={{
-        display: "grid",
-        gridTemplateColumns:
-          "repeat(auto-fit, minmax(220px, 1fr))",
-        gap: "24px",
-      }}
-    >
-      <InfoCard
-        label="Company"
-        value={profile.company || "Not specified"}
-      />
-      <InfoCard
-        label="Designation"
-        value={profile.designation || "Not specified"}
-      />
-      <InfoCard
-        label="Graduation Year"
-        value={profile.graduation_year || "Not specified"}
-      />
-      <InfoCard
-        label="LinkedIn"
-        value={
-          profile.linkedin_url ? (
-            <a
-              href={profile.linkedin_url}
-              target="_blank"
-              rel="noreferrer"
-              style={{ color: "var(--primary)" }}
-            >
-              View profile
-            </a>
-          ) : (
-            "Not specified"
-          )
-        }
-      />
+    <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+          gap: "24px",
+        }}
+      >
+        <InfoCard label="Company" value={profile.company || "Not specified"} />
+        <InfoCard label="Designation" value={profile.designation || "Not specified"} />
+        <InfoCard label="Graduation Year" value={profile.graduation_year || "Not specified"} />
+        <InfoCard
+          label="LinkedIn"
+          value={
+            profile.linkedin_url ? (
+              <a href={profile.linkedin_url} target="_blank" rel="noreferrer" style={{ color: "var(--primary)" }}>
+                View profile
+              </a>
+            ) : (
+              "Not specified"
+            )
+          }
+        />
+      </div>
+
+      <section
+        style={{
+          background: "var(--surface)",
+          border: "1px solid var(--border)",
+          borderRadius: "var(--radius-lg)",
+          padding: "24px",
+          display: "flex",
+          flexDirection: "column",
+          gap: "20px",
+        }}
+      >
+        <div>
+          <h2 style={{ marginBottom: "6px" }}>Mentorship Settings</h2>
+          <p style={{ color: "var(--text-secondary)" }}>{status}</p>
+        </div>
+
+        <div>
+          <h3 style={{ marginBottom: "12px" }}>Session Types</h3>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
+            {serviceOptions.map((option) => {
+              const selected = services.includes(option);
+              return (
+                <button
+                  key={option}
+                  type="button"
+                  onClick={() => handleServiceToggle(option)}
+                  style={{
+                    border: `1px solid ${selected ? "var(--primary)" : "var(--border)"}`,
+                    background: selected ? "rgba(106, 68, 48, 0.08)" : "white",
+                    color: selected ? "var(--primary)" : "var(--text-primary)",
+                    borderRadius: "999px",
+                    padding: "10px 14px",
+                    cursor: "pointer",
+                  }}
+                >
+                  {selected ? "✓ " : "○ "}{option}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        <div>
+          <h3 style={{ marginBottom: "12px" }}>Pricing</h3>
+          <div style={{ display: "grid", gap: "10px" }}>
+            {serviceOptions.map((option) => (
+              <div key={option} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px" }}>
+                <span>{option}</span>
+                <input
+                  value={pricing[option] || "Free"}
+                  onChange={(event) => handlePricingChange(option, event.target.value)}
+                  placeholder="Free"
+                  style={{ border: "1px solid var(--border)", borderRadius: "10px", padding: "8px 12px", minWidth: "140px" }}
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <h3 style={{ marginBottom: "12px" }}>Availability</h3>
+          <div style={{ display: "grid", gap: "12px" }}>
+            <div style={{ display: "flex", gap: "10px", flexWrap: "wrap" }}>
+              <select value={newSlot.dayOfWeek} onChange={(event) => setNewSlot((current) => ({ ...current, dayOfWeek: event.target.value }))} style={{ border: "1px solid var(--border)", borderRadius: "10px", padding: "8px 12px" }}>
+                {Array.from({ length: 7 }, (_, index) => (
+                  <option key={index} value={index}>{["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"][index]}</option>
+                ))}
+              </select>
+              <input type="time" value={newSlot.startTime} onChange={(event) => setNewSlot((current) => ({ ...current, startTime: event.target.value }))} style={{ border: "1px solid var(--border)", borderRadius: "10px", padding: "8px 12px" }} />
+              <input type="time" value={newSlot.endTime} onChange={(event) => setNewSlot((current) => ({ ...current, endTime: event.target.value }))} style={{ border: "1px solid var(--border)", borderRadius: "10px", padding: "8px 12px" }} />
+              <button type="button" onClick={handleAddAvailability} style={{ border: "1px solid var(--primary)", background: "var(--primary)", color: "white", borderRadius: "10px", padding: "8px 12px", cursor: "pointer" }}>Add Slot</button>
+            </div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+              {availability.map((slot) => (
+                <div key={slot.id} style={{ border: "1px solid var(--border)", borderRadius: "999px", padding: "8px 12px", display: "inline-flex", alignItems: "center", gap: "8px" }}>
+                  <span>{slot.day_of_week !== null && slot.day_of_week !== undefined ? weekdayLabel(slot.day_of_week) : "Date"} • {slot.start_time} - {slot.end_time}</span>
+                  <button type="button" onClick={() => handleDeleteAvailability(slot.id)} style={{ color: "var(--primary)", cursor: "pointer" }}>×</button>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <h3 style={{ marginBottom: "12px" }}>Availability Preview</h3>
+          <p style={{ color: "var(--text-secondary)" }}>Available This Week • {previewDays || "No slots yet"}</p>
+          <div style={{ marginTop: "10px", color: "var(--text-secondary)" }}>
+            {availability.length > 0 ? availability.map((slot) => <div key={slot.id}>{weekdayLabel(slot.day_of_week ?? 0)} • {slot.start_time} - {slot.end_time}</div>) : <div>No availability configured yet.</div>}
+          </div>
+        </div>
+
+        <div>
+          <h3 style={{ marginBottom: "12px" }}>Session Duration</h3>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: "10px" }}>
+            {durationOptions.map((option) => (
+              <span key={option} style={{ border: "1px solid var(--border)", borderRadius: "999px", padding: "8px 12px" }}>{option}</span>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <h3 style={{ marginBottom: "12px" }}>Timezone</h3>
+          <p style={{ color: "var(--text-secondary)" }}>Asia/Kolkata</p>
+        </div>
+      </section>
     </div>
   );
 }

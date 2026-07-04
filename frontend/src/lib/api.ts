@@ -1,3 +1,11 @@
+import type {
+  Booking,
+  BookingStatus,
+  CreateBookingPayload,
+} from "@/types/Booking";
+
+export type { Booking, BookingStatus, CreateBookingPayload } from "@/types/Booking";
+
 const API_BASE =
   process.env.NEXT_PUBLIC_API_URL ||
   "http://localhost:8000";
@@ -29,22 +37,23 @@ export type Alumni = {
   profile_image?: string | null;
 };
 
-export type BookingStatus =
-  | "pending"
-  | "upcoming"
-  | "completed"
-  | "cancelled"
-  | "rejected";
-
-export type Booking = {
+export type MentorshipService = {
   id: number;
-  student_id: number;
   alumni_id: number;
-  session_type: string;
-  date: string;
-  time: string;
-  status: BookingStatus;
-  created_at?: string | null;
+  service_type: string;
+  price: number | null;
+  is_enabled: boolean;
+  currency?: string;
+};
+
+export type AvailabilitySlot = {
+  id: number;
+  alumni_id: number;
+  day_of_week?: number | null;
+  date?: string | null;
+  start_time: string;
+  end_time: string;
+  timezone?: string | null;
 };
 
 export type Review = {
@@ -356,17 +365,74 @@ export async function removeSavedAlumni(
 
 export async function createBooking(
   token: string,
-  data: {
-    alumni_id: number;
-    session_type: string;
-    date: string;
-    time: string;
-  }
+  data: CreateBookingPayload
 ): Promise<Booking> {
   return request("/bookings", {
     method: "POST",
     headers: getAuthHeaders(token),
     body: JSON.stringify(data),
+  });
+}
+
+export async function fetchMentorshipServices(
+  alumniId: number | string,
+  token?: string
+): Promise<MentorshipService[]> {
+  return request(`/mentorship-services/${alumniId}`, {
+    headers: token ? getAuthHeaders(token) : undefined,
+  });
+}
+
+export async function upsertMentorshipService(
+  token: string,
+  data: {
+    alumni_id: number;
+    service_type: string;
+    price: number | null;
+    is_enabled: boolean;
+    currency?: string;
+  }
+): Promise<MentorshipService> {
+  return request("/mentorship-services", {
+    method: "POST",
+    headers: getAuthHeaders(token),
+    body: JSON.stringify(data),
+  });
+}
+
+export async function fetchAvailability(
+  alumniId: number | string,
+  token?: string
+): Promise<AvailabilitySlot[]> {
+  return request(`/availability/${alumniId}`, {
+    headers: token ? getAuthHeaders(token) : undefined,
+  });
+}
+
+export async function createAvailability(
+  token: string,
+  data: {
+    day_of_week?: number | null;
+    date?: string | null;
+    start_time: string;
+    end_time: string;
+    timezone?: string;
+  }
+): Promise<AvailabilitySlot> {
+  return request("/availability", {
+    method: "POST",
+    headers: getAuthHeaders(token),
+    body: JSON.stringify(data),
+  });
+}
+
+export async function deleteAvailability(
+  token: string,
+  availabilityId: number
+): Promise<void> {
+  return request(`/availability/${availabilityId}`, {
+    method: "DELETE",
+    headers: getAuthHeaders(token),
   });
 }
 

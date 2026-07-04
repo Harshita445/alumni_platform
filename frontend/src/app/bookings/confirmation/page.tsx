@@ -3,20 +3,11 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { mockAlumni } from "@/data/mockAlumni";
-
-type BookingData = {
-  id: number;
-  alumni_id: number;
-  student_id: number;
-  session_type: string;
-  date: string;
-  time: string;
-  status: string;
-};
+import type { Booking } from "@/types/Booking";
 
 export default function BookingConfirmationPage() {
   const router = useRouter();
-  const [booking] = useState<BookingData | null>(
+  const [booking] = useState<Booking | null>(
     () => {
       if (typeof window === "undefined") {
         return null;
@@ -31,7 +22,7 @@ export default function BookingConfirmationPage() {
       }
 
       try {
-        return JSON.parse(stored) as BookingData;
+        return JSON.parse(stored) as Booking;
       } catch {
         return null;
       }

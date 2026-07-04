@@ -68,6 +68,7 @@ export default function Navbar() {
           }}
         >
           <Link href="/search">Explore</Link>
+          <Link href="/mentorship">Mentorship</Link>
           <Link href="/dashboard">Dashboard</Link>
           <Link href="/bookings">Bookings</Link>
           <Link href="/profile">Profile</Link>
