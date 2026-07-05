@@ -6,9 +6,19 @@ import type {
 
 export type { Booking, BookingStatus, CreateBookingPayload } from "@/types/Booking";
 
-const API_BASE =
-  process.env.NEXT_PUBLIC_API_URL ||
-  "http://localhost:8000";
+const API_BASE = (() => {
+  const configuredBase = process.env.NEXT_PUBLIC_API_URL || process.env.BACKEND_URL;
+
+  if (configuredBase) {
+    return configuredBase.replace(/\/$/, "");
+  }
+
+  if (typeof window !== "undefined" && window.location.hostname !== "localhost") {
+    return "/api";
+  }
+
+  return "http://localhost:8000";
+})();
 
 const STORAGE_KEY = "current-user";
 
