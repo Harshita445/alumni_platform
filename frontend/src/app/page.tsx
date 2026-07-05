@@ -43,7 +43,7 @@ const features = [
 const audiences = [
   {
     Icon: GraduationCap,
-    title: "I'm a student",
+    title: "I&apos;m a student",
     description:
       "Connect with alumni, get mentorship, prepare for interviews, and discover opportunities.",
     cta: "Explore mentors",
@@ -51,7 +51,7 @@ const audiences = [
   },
   {
     Icon: UserRoundCheck,
-    title: "I'm an alumni",
+    title: "I&apos;m an alumni",
     description:
       "Share your experience, guide students, and strengthen the Thapar network.",
     cta: "Become a mentor",
@@ -103,12 +103,12 @@ export default function HomePage() {
           </div>
 
           <div className="hero-actions">
-            <Link className="btn btn-primary" href="/mentorship">
-              Explore mentorship
+            <Link className="btn btn-primary" href="/search">
+              Explore alumni
             </Link>
 
             <Link className="btn btn-secondary" href="/register">
-              I'm an alumni
+              I&apos;m an alumni
             </Link>
           </div>
         </div>
@@ -161,7 +161,7 @@ export default function HomePage() {
       <section className="landing-section audience-section">
         <div className="section-heading">
           <h2>Built for every stage of your journey</h2>
-          <p>Whether you're seeking guidance or giving back.</p>
+          <p>Whether you&apos;re seeking guidance or giving back.</p>
         </div>
 
         <div className="audience-grid">
@@ -204,7 +204,7 @@ export default function HomePage() {
                   <span>{meta}</span>
                 </div>
               </div>
-              <p>"{quote}"</p>
+              <p>&quot;{quote}&quot;</p>
             </article>
           ))}
         </div>

@@ -21,8 +21,17 @@ export type UserProfile = {
   bio?: string | null;
   linkedin_url?: string | null;
   profile_image?: string | null;
+  profile_picture_url?: string | null;
+  profile_picture_public_id?: string | null;
+  resume_url?: string | null;
+  resume_public_id?: string | null;
+  skills?: string[];
+  career_interests?: string[];
+  goals?: string | null;
   target_companies?: string[];
   desired_roles?: string[];
+  expertise?: string[];
+  mentorship_services?: string[];
 };
 
 export type Alumni = {
@@ -73,6 +82,8 @@ export type StoredUser = {
   access_token: string;
   token_type: string;
   profile?: UserProfile;
+  verification_status?: "verified" | "pending" | "rejected";
+  onboarding_step?: number;
 };
 
 export function getStoredUser(): StoredUser | null {
@@ -109,6 +120,16 @@ export function clearStoredUser() {
 
   localStorage.removeItem(STORAGE_KEY);
   window.dispatchEvent(new Event("current-user-changed"));
+}
+
+export function mergeProfileIntoStoredUser(user: StoredUser, profile: UserProfile): StoredUser {
+  return {
+    ...user,
+    profile: {
+      ...(user.profile || {}),
+      ...profile,
+    },
+  };
 }
 
 async function request(
@@ -164,6 +185,8 @@ export async function registerUser(payload: {
     access_token: tokenData.access_token,
     token_type: tokenData.token_type,
     profile,
+    verification_status: user.verification_status ?? (payload.role === "alumni" ? "pending" : "verified"),
+    onboarding_step: user.onboarding_step ?? 0,
   };
 
   saveStoredUser(storedUser);
@@ -191,6 +214,8 @@ export async function googleAuth(payload: {
     access_token: tokenData.access_token,
     token_type: tokenData.token_type,
     profile,
+    verification_status: user.verification_status ?? (payload.role === "alumni" ? "pending" : "verified"),
+    onboarding_step: user.onboarding_step ?? 0,
   };
 
   saveStoredUser(storedUser);
@@ -237,6 +262,51 @@ export async function loginUser(
     access_token: tokenData.access_token,
     token_type: tokenData.token_type,
     profile,
+    verification_status: user.verification_status ?? "verified",
+    onboarding_step: user.onboarding_step ?? 0,
+  };
+
+  saveStoredUser(storedUser);
+
+  return storedUser;
+}
+
+export async function demoLogin(role: "student" | "alumni") {
+  const response = await fetch(`${API_BASE}/auth/demo-login`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ role }),
+  });
+
+  if (!response.ok) {
+    let errorMessage = response.statusText;
+
+    try {
+      const errorBody = await response.json();
+      if (errorBody?.detail) {
+        errorMessage = errorBody.detail;
+      }
+    } catch {
+      // ignore
+    }
+
+    throw new Error(errorMessage || "Demo login failed");
+  }
+
+  const tokenData = await response.json();
+
+  const user = await fetchMe(tokenData.access_token);
+  const profile = await fetchProfile(tokenData.access_token);
+
+  const storedUser: StoredUser = {
+    ...user,
+    access_token: tokenData.access_token,
+    token_type: tokenData.token_type,
+    profile,
+    verification_status: user.verification_status ?? "verified",
+    onboarding_step: user.onboarding_step ?? 0,
   };
 
   saveStoredUser(storedUser);
@@ -246,7 +316,13 @@ export async function loginUser(
 
 export async function fetchMe(
   token: string
-): Promise<{ id: number; email: string; role: "student" | "alumni" }> {
+): Promise<{
+  id: number;
+  email: string;
+  role: "student" | "alumni";
+  verification_status?: "verified" | "pending" | "rejected";
+  onboarding_step?: number;
+}> {
   return request("/auth/me", {
     headers: {
       Authorization: `Bearer ${token}`,
@@ -305,6 +381,46 @@ export async function updateProfile(
     headers: getAuthHeaders(token),
     body: JSON.stringify(data),
   });
+}
+
+export async function uploadProfilePicture(token: string, file: File) {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const response = await fetch(`${API_BASE}/api/upload/profile-picture`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const errorBody = await response.json().catch(() => null);
+    throw new Error(errorBody?.detail || "Profile picture upload failed");
+  }
+
+  return response.json();
+}
+
+export async function uploadResume(token: string, file: File) {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const response = await fetch(`${API_BASE}/api/upload/resume`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+    body: formData,
+  });
+
+  if (!response.ok) {
+    const errorBody = await response.json().catch(() => null);
+    throw new Error(errorBody?.detail || "Resume upload failed");
+  }
+
+  return response.json();
 }
 
 export async function fetchAlumni(
@@ -496,6 +612,20 @@ export async function fetchDashboard(
 export async function fetchNotifications(token: string) {
   return request("/notifications/me", {
     headers: getAuthHeaders(token),
+  });
+}
+
+export async function fetchPaymentSummary(token: string) {
+  return request("/payments/admin/summary", {
+    headers: getAuthHeaders(token),
+  });
+}
+
+export async function createPayment(token: string, bookingId: number) {
+  return request("/payments", {
+    method: "POST",
+    headers: getAuthHeaders(token),
+    body: JSON.stringify({ booking_id: bookingId }),
   });
 }
 

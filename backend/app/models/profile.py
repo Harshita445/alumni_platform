@@ -1,4 +1,5 @@
 from sqlalchemy import Column, ForeignKey, Integer, String, Text
+from sqlalchemy.dialects.sqlite import JSON
 from sqlalchemy.orm import relationship
 
 from app.database import Base
@@ -11,7 +12,7 @@ class Profile(Base):
 
     user_id = Column(
         Integer,
-        ForeignKey("users.id"),
+        ForeignKey("users.id", ondelete="CASCADE"),
         unique=True,
         nullable=False,
     )
@@ -29,6 +30,19 @@ class Profile(Base):
     bio = Column(Text, nullable=True)
 
     linkedin_url = Column(String, nullable=True)
+
+    profile_picture_url = Column(String, nullable=True)
+    profile_picture_public_id = Column(String, nullable=True)
+    resume_url = Column(String, nullable=True)
+    resume_public_id = Column(String, nullable=True)
+
+    skills = Column(JSON, nullable=True)
+    career_interests = Column(JSON, nullable=True)
+    goals = Column(Text, nullable=True)
+    target_companies = Column(JSON, nullable=True)
+    desired_roles = Column(JSON, nullable=True)
+    expertise = Column(JSON, nullable=True)
+    mentorship_services = Column(JSON, nullable=True)
 
     user = relationship(
         "User",

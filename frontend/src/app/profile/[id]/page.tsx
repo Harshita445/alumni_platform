@@ -11,6 +11,7 @@ import {
   Alumni,
   AvailabilitySlot,
   Review,
+  createBooking,
   fetchAlumniDetails,
   fetchAlumniReviews,
   fetchAvailability,
@@ -138,25 +139,13 @@ export default function ProfilePage() {
     setSuccess(null);
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/bookings`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${user.access_token}`,
-        },
-        body: JSON.stringify({
-          alumni_id: alumni.id,
-          session_type: selectedService,
-          date: selectedDate,
-          time: selectedTime,
-          message,
-        }),
+      await createBooking(user.access_token, {
+        alumni_id: alumni.id,
+        session_type: selectedService,
+        date: selectedDate,
+        time: selectedTime,
+        message,
       });
-
-      if (!response.ok) {
-        const payload = await response.json().catch(() => ({}));
-        throw new Error(payload.detail || "Unable to request this session.");
-      }
 
       setSuccess("Your session request has been submitted and is awaiting mentor approval.");
       setMessage("");

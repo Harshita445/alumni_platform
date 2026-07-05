@@ -8,7 +8,7 @@ export const mockBookings: Booking[] = [
     session_type: "Resume Review",
     date: "2026-06-20",
     time: "18:00",
-    status: "upcoming",
+    status: "confirmed",
     message: "I would like help refining my resume for product roles.",
     status_history: [
       {
@@ -17,7 +17,7 @@ export const mockBookings: Booking[] = [
         note: "Session requested",
       },
       {
-        status: "upcoming",
+        status: "confirmed",
         changed_at: "2026-06-16T08:30:00.000Z",
         note: "Accepted by alumni",
       },

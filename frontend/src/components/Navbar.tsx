@@ -67,12 +67,16 @@ export default function Navbar() {
             fontSize: "19px",
           }}
         >
-          <Link href="/search">Explore</Link>
-          <Link href="/mentorship">Mentorship</Link>
-          <Link href="/dashboard">Dashboard</Link>
-          <Link href="/bookings">Bookings</Link>
-          <Link href="/profile">Profile</Link>
-          {user ? <Link href="/admin">Admin</Link> : null}
+          <Link href="/search">Explore Alumni</Link>
+          <Link href="/community">Community</Link>
+          {user ? (
+            <>
+              <Link href="/dashboard">Dashboard</Link>
+              <Link href="/bookings">Bookings</Link>
+              <Link href="/profile">Profile</Link>
+              {user.role === "student" ? <Link href="/saved">Saved</Link> : null}
+            </>
+          ) : null}
         </div>
 
         <div

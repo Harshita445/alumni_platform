@@ -1,6 +1,7 @@
 import "./globals.css";
 
 import Navbar from "@/components/Navbar";
+import AuthRouteGuard from "@/components/AuthRouteGuard";
 
 import { Inter, DM_Serif_Display } from "next/font/google";
 
@@ -24,7 +25,7 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${inter.variable} ${dmSerif.variable}`}>
         <Navbar />
-        {children}
+        <AuthRouteGuard>{children}</AuthRouteGuard>
       </body>
     </html>
   );

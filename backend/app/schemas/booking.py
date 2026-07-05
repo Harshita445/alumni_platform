@@ -9,6 +9,7 @@ class BookingCreate(BaseModel):
     session_type: str = Field(min_length=1, max_length=80)
     date: date
     time: time
+    message: Optional[str] = None
 
     @field_validator("date", mode="before")
     @classmethod
@@ -39,6 +40,13 @@ class BookingResponse(BaseModel):
     date: date
     time: time
     status: str
+    message: Optional[str] = None
+    timezone: Optional[str] = None
+    meeting_link: Optional[str] = None
+    payment_id: Optional[int] = None
+    payment_status: Optional[str] = None
+    payment_gateway: Optional[str] = None
+    status_history: Optional[list[dict]] = None
     created_at: Optional[datetime] = None
 
     model_config = ConfigDict(from_attributes=True)

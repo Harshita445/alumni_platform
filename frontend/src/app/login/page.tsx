@@ -4,9 +4,10 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { LockKeyhole, Mail } from "lucide-react";
 
-import { googleAuth, loginUser } from "@/lib/api";
+import { demoLogin, googleAuth, loginUser } from "@/lib/api";
 import { useAuth } from "@/hooks/useAuth";
 import { promptGoogleSignIn } from "@/lib/googleAuth";
+import { resolvePostAuthRoute } from "@/lib/onboarding";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -20,7 +21,7 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (user) {
-      router.replace("/dashboard");
+      router.replace(resolvePostAuthRoute(user));
     }
   }, [user, router]);
 
@@ -41,6 +42,14 @@ export default function LoginPage() {
     };
   }, []);
 
+  const getLoginDestination = (storedUser: { role?: "student" | "alumni"; onboarding_step?: number }) => {
+    if (storedUser.role === "student" && typeof storedUser.onboarding_step === "number" && storedUser.onboarding_step >= 5) {
+      return "/dashboard";
+    }
+
+    return resolvePostAuthRoute(storedUser);
+  };
+
   const handleGoogleSubmit = async (role: "student" | "alumni") => {
     setError(null);
 
@@ -52,7 +61,7 @@ export default function LoginPage() {
           id_token: credential,
         });
         login(storedUser);
-        router.push("/dashboard");
+        router.replace(getLoginDestination(storedUser));
       });
     } catch (err: unknown) {
       setError(
@@ -76,12 +85,31 @@ export default function LoginPage() {
     try {
       const storedUser = await loginUser(email, password);
       login(storedUser);
-      router.push("/dashboard");
+      router.replace(getLoginDestination(storedUser));
     } catch (err: unknown) {
       setError(
         err instanceof Error
           ? err.message
           : "Login failed."
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleDemoLogin = async (role: "student" | "alumni") => {
+    setError(null);
+    setIsSubmitting(true);
+
+    try {
+      const storedUser = await demoLogin(role);
+      login(storedUser);
+      router.replace(getLoginDestination(storedUser));
+    } catch (err: unknown) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Demo login failed."
       );
     } finally {
       setIsSubmitting(false);
@@ -168,6 +196,26 @@ export default function LoginPage() {
             </div>
 
             <div style={{ display: "grid", gap: "14px" }}>
+              <button
+                type="button"
+                onClick={() => handleDemoLogin("student")}
+                disabled={isSubmitting}
+                className="auth-google-button"
+                style={{ opacity: isSubmitting ? 0.7 : 1 }}
+              >
+                Demo sign in as student
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleDemoLogin("alumni")}
+                disabled={isSubmitting}
+                className="auth-google-button"
+                style={{ opacity: isSubmitting ? 0.7 : 1 }}
+              >
+                Demo sign in as alumni
+              </button>
+
               <button
                 type="button"
                 onClick={() => handleGoogleSubmit("student")}

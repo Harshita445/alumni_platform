@@ -2,6 +2,8 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import distinct, func
 from sqlalchemy.orm import Session
 
+from app.models.profile import Profile
+
 from app.database import get_db
 from app.dependencies.auth import get_current_user
 from app.models.booking import Booking
@@ -10,6 +12,7 @@ from app.models.user import User
 from app.schemas.dashboard import (
     AlumniDashboardResponse,
     RecentBooking,
+    Recommendation,
     StudentDashboardResponse,
 )
 
@@ -40,7 +43,7 @@ def student_dashboard(
 
     upcoming = db.query(Booking).filter(
         Booking.student_id == current_user.id,
-        Booking.status == "upcoming",
+        Booking.status == "confirmed",
     ).count()
 
     completed = db.query(Booking).filter(
@@ -62,6 +65,61 @@ def student_dashboard(
         .all()
     )
 
+    student_profile = (
+        db.query(Profile)
+        .filter(Profile.user_id == current_user.id)
+        .first()
+    )
+    profile_keywords = []
+    if student_profile:
+        profile_keywords.extend(student_profile.career_interests or [])
+        profile_keywords.extend(student_profile.target_companies or [])
+        profile_keywords.extend(student_profile.desired_roles or [])
+        profile_keywords.extend(student_profile.skills or [])
+
+    recommendation_profiles = (
+        db.query(Profile)
+        .join(User)
+        .filter(User.role == "alumni")
+        .all()
+    )
+
+    recommendations = []
+    for profile in recommendation_profiles:
+        if profile.user_id == current_user.id:
+            continue
+        profile_text = " ".join(
+            filter(
+                None,
+                [
+                    profile.full_name,
+                    profile.company,
+                    profile.designation,
+                    profile.bio,
+                    " ".join(profile.expertise or []),
+                    " ".join(profile.mentorship_services or []),
+                ],
+            )
+        ).lower()
+        score = 0.0
+        for keyword in profile_keywords:
+            if keyword and keyword.lower() in profile_text:
+                score += 1.0
+        if profile_keywords and score > 0:
+            recommendations.append(
+                Recommendation(
+                    id=profile.user_id,
+                    full_name=profile.full_name or "Alumnus",
+                    company=profile.company,
+                    designation=profile.designation,
+                    score=round(score, 2),
+                    reason="Matches your interests and goals",
+                )
+            )
+
+    recommendations.sort(key=lambda item: item.score, reverse=True)
+    recommendations = recommendations[:3]
+
     recent = []
 
     for booking in bookings:
@@ -82,6 +140,7 @@ def student_dashboard(
         "upcoming_sessions": upcoming,
         "completed_sessions": completed,
         "saved_alumni": saved,
+        "recommendations": recommendations,
         "recent_bookings": recent,
     }
 
@@ -107,7 +166,7 @@ def alumni_dashboard(
 
     upcoming = db.query(Booking).filter(
         Booking.alumni_id == current_user.id,
-        Booking.status == "upcoming",
+        Booking.status == "confirmed",
     ).count()
 
     completed = db.query(Booking).filter(

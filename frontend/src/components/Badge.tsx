@@ -1,6 +1,6 @@
 type BadgeProps = {
   text: string;
-  tone?: "neutral" | "pending" | "upcoming" | "completed" | "cancelled" | "rejected";
+  tone?: "neutral" | "pending" | "approved" | "awaiting_payment" | "paid" | "confirmed" | "completed" | "cancelled" | "rejected";
 };
 
 export default function Badge({ text, tone = "neutral" }: BadgeProps) {
@@ -13,9 +13,21 @@ export default function Badge({ text, tone = "neutral" }: BadgeProps) {
       backgroundColor: "#F3E1C4",
       color: "#7A4B12",
     },
-    upcoming: {
+    approved: {
       backgroundColor: "#DDE6F2",
       color: "#31506F",
+    },
+    awaiting_payment: {
+      backgroundColor: "#F3E1C4",
+      color: "#7A4B12",
+    },
+    paid: {
+      backgroundColor: "#E2E9D8",
+      color: "#4F633A",
+    },
+    confirmed: {
+      backgroundColor: "#E2E9D8",
+      color: "#4F633A",
     },
     completed: {
       backgroundColor: "#E2E9D8",

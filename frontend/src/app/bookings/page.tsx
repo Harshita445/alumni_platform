@@ -60,6 +60,7 @@ function BookingPageContent() {
     useState("Resume Review");
   const [date, setDate] = useState("");
   const [time, setTime] = useState("");
+  const [message, setMessage] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [loading, setLoading] = useState(Boolean(user));
@@ -132,6 +133,7 @@ function BookingPageContent() {
         session_type: sessionType,
         date,
         time,
+        message: message.trim() || undefined,
       });
 
       localStorage.setItem(
@@ -288,6 +290,27 @@ function BookingPageContent() {
               value={time}
               onChange={(e) => setTime(e.target.value)}
               style={inputStyle}
+            />
+          </div>
+
+          <div>
+            <label style={labelStyle}>
+              Message for the mentor
+            </label>
+            <textarea
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              rows={4}
+              placeholder="Share your goals or the session outcomes you want"
+              style={{
+                width: "100%",
+                border: "1px solid var(--border)",
+                borderRadius: "var(--radius-md)",
+                background: "var(--background)",
+                color: "var(--text-primary)",
+                padding: "14px 16px",
+                resize: "vertical",
+              }}
             />
           </div>
 

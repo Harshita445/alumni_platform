@@ -3,7 +3,7 @@ import json
 import re
 import smtplib
 import time
-from datetime import timedelta
+from datetime import date, time, timedelta
 from email.message import EmailMessage
 from jose import jwt, JWTError
 import os
@@ -12,6 +12,7 @@ from typing import Optional
 from fastapi import APIRouter, Depends, Header, HTTPException
 from fastapi.security import OAuth2PasswordRequestForm
 
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
@@ -22,6 +23,9 @@ from app.core.security import (
 )
 from app.database import get_db
 from app.dependencies.auth import get_current_user
+from app.models.booking import Booking, BookingStatus
+from app.models.payments import MentorPayoutSettings
+from app.models.profile import Profile
 from app.models.user import User
 
 from app.schemas.auth import (
@@ -48,6 +52,18 @@ def _require_admin_access(admin_key: str | None) -> None:
 
     if admin_key != settings.ADMIN_API_KEY:
         raise HTTPException(status_code=403, detail="Admin access required")
+
+
+def _normalize_email(email: str | None) -> str:
+    return (email or "").strip().lower()
+
+
+def _get_user_by_email(db: Session, email: str | None) -> User | None:
+    normalized_email = _normalize_email(email)
+    if not normalized_email:
+        return None
+
+    return db.query(User).filter(func.lower(User.email) == normalized_email).first()
 
 
 def _looks_like_student_email(email: str) -> bool:
@@ -222,10 +238,13 @@ def auth_health():
 def get_me(
     current_user: User = Depends(get_current_user),
 ):
+    verification_status = "pending" if current_user.is_pending_verification else "verified" if current_user.is_verified else "rejected"
+
     return {
         "id": current_user.id,
         "email": current_user.email,
         "role": current_user.role,
+        "verification_status": verification_status,
     }
 
 
@@ -237,11 +256,9 @@ def register(
     payload: RegisterRequest,
     db: Session = Depends(get_db),
 ):
-    existing_user = (
-        db.query(User)
-        .filter(User.email == payload.email)
-        .first()
-    )
+    email = _normalize_email(str(payload.email))
+
+    existing_user = _get_user_by_email(db, email)
 
     if existing_user:
         raise HTTPException(
@@ -251,7 +268,7 @@ def register(
 
     if (
         payload.role == "student"
-        and not payload.email.endswith("@thapar.edu")
+        and not email.endswith("@thapar.edu")
     ):
         raise HTTPException(
             status_code=400,
@@ -260,21 +277,21 @@ def register(
 
     if (
         payload.role == "student"
-        and _looks_like_graduating_batch_email(payload.email)
+        and _looks_like_graduating_batch_email(email)
     ):
         raise HTTPException(
             status_code=400,
             detail="It looks like you should register as an alumni instead.",
         )
 
-    if payload.role == "alumni" and _looks_like_student_email(payload.email):
+    if payload.role == "alumni" and _looks_like_student_email(email):
         raise HTTPException(
             status_code=400,
             detail="It looks like you are a student. Please register or log in as a student instead.",
         )
 
     user = User(
-        email=payload.email,
+        email=email,
         hashed_password=hash_password(
             payload.password
         ),
@@ -377,7 +394,7 @@ def google_auth(
         payload.name,
     )
     provider_id = payload.provider_id or provider_id
-    email = (email or "").strip().lower()
+    email = _normalize_email(email)
 
     if not email:
         raise HTTPException(
@@ -410,11 +427,7 @@ def google_auth(
     is_verified = is_thapar_email or payload.role != "alumni"
     requires_admin_review = payload.role == "alumni" and not is_thapar_email
 
-    existing_user = (
-        db.query(User)
-        .filter(User.email == email)
-        .first()
-    )
+    existing_user = _get_user_by_email(db, email)
 
     if existing_user and existing_user.role != payload.role:
         raise HTTPException(
@@ -480,9 +493,9 @@ def password_reset_request(
     payload: PasswordResetRequest,
     db: Session = Depends(get_db),
 ):
-    email = (payload.email or "").strip().lower()
+    email = _normalize_email(payload.email)
 
-    user = db.query(User).filter(User.email == email).first()
+    user = _get_user_by_email(db, email)
 
     # Always return a success-like response to avoid leaking account existence
     if not user:
@@ -542,6 +555,131 @@ def password_reset_confirm(
     return {"message": "Password updated"}
 
 
+class DemoLoginRequest(BaseModel):
+    role: str
+
+
+@router.post(
+    "/demo-login",
+    response_model=TokenResponse,
+)
+def demo_login(
+    payload: DemoLoginRequest,
+    db: Session = Depends(get_db),
+):
+    role = payload.role.lower()
+    if role not in {"student", "alumni"}:
+        raise HTTPException(status_code=400, detail="Role must be either student or alumni")
+
+    demo_email = "demo-student@example.com" if role == "student" else "demo-alumni@example.com"
+    user = _get_user_by_email(db, demo_email)
+
+    if user is None:
+        user = User(
+            email=demo_email,
+            hashed_password=hash_password("DemoPass123!"),
+            role=role,
+            auth_provider="email",
+            display_name="Demo User",
+            is_verified=True,
+            is_pending_verification=False,
+        )
+        db.add(user)
+        db.flush()
+
+    user.hashed_password = hash_password("DemoPass123!")
+    user.is_verified = True
+    user.is_pending_verification = False
+    user.display_name = "Demo User"
+
+    if role == "student":
+        alumni = (
+            db.query(User)
+            .filter(User.email == "demo-alumni@example.com")
+            .first()
+        )
+        if alumni is None:
+            alumni = User(
+                email="demo-alumni@example.com",
+                hashed_password=hash_password("DemoPass123!"),
+                role="alumni",
+                auth_provider="email",
+                display_name="Demo Alumni",
+                is_verified=True,
+                is_pending_verification=False,
+            )
+            db.add(alumni)
+            db.flush()
+
+            profile = (
+                db.query(Profile)
+                .filter(Profile.user_id == alumni.id)
+                .first()
+            )
+            if profile is None:
+                db.add(
+                    Profile(
+                        user_id=alumni.id,
+                        full_name="Demo Alumni",
+                        company="Demo Company",
+                        designation="Engineering Lead",
+                        branch="CSE",
+                        graduation_year=2020,
+                        bio="Demo alumni profile for local payment testing.",
+                    )
+                )
+
+            existing_payout_settings = (
+                db.query(MentorPayoutSettings)
+                .filter(MentorPayoutSettings.mentor_id == alumni.id)
+                .first()
+            )
+            if existing_payout_settings is None:
+                db.add(
+                    MentorPayoutSettings(
+                        mentor_id=alumni.id,
+                        method="UPI",
+                        upi_id="demo-alumni@upi",
+                        account_holder="Demo Alumni",
+                        verified="verified",
+                    )
+                )
+
+        existing_booking = (
+            db.query(Booking)
+            .filter(Booking.student_id == user.id)
+            .filter(Booking.alumni_id == alumni.id)
+            .first()
+        )
+        if existing_booking is None:
+            db.add(
+                Booking(
+                    student_id=user.id,
+                    alumni_id=alumni.id,
+                    session_type="Mock Mentorship",
+                    date=date.today() + timedelta(days=2),
+                    time=time(18, 0),
+                    status=BookingStatus.APPROVED.value,
+                )
+            )
+
+    db.commit()
+    db.refresh(user)
+
+    token = create_access_token(
+        {
+            "sub": str(user.id),
+            "email": user.email,
+            "role": user.role,
+        }
+    )
+
+    return {
+        "access_token": token,
+        "token_type": "bearer",
+    }
+
+
 @router.post(
     "/login",
     response_model=TokenResponse,
@@ -550,17 +688,15 @@ def login(
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_db),
 ):
-    if _looks_like_student_email(form_data.username):
+    username = _normalize_email(form_data.username)
+
+    if _looks_like_student_email(username):
         raise HTTPException(
             status_code=403,
             detail="It looks like you are a student. Please sign in as a student instead.",
         )
 
-    user = (
-        db.query(User)
-        .filter(User.email == form_data.username)
-        .first()
-    )
+    user = _get_user_by_email(db, username)
 
     if not user:
         raise HTTPException(
@@ -568,7 +704,7 @@ def login(
             detail="Invalid credentials",
         )
 
-    if _looks_like_student_email(form_data.username):
+    if _looks_like_student_email(username):
         raise HTTPException(
             status_code=403,
             detail="It looks like you are a student. Please sign in as a student instead.",

@@ -1,6 +1,27 @@
 # Changes To Remember
 
-Last updated: 2026-07-01.
+Last updated: 2026-07-04.
+
+## Current Platform Status (2026-07-04)
+
+### Completed so far
+
+- Redesigned the Explore Alumni experience into a more premium, modern SaaS-style discovery flow with clearer hierarchy, filter controls, and stronger empty/error states.
+- Applied a consistent premium visual treatment across login-gated and protected pages, including dashboard, bookings, mentorship, saved alumni, and profile surfaces.
+- Implemented a complete mentorship booking workflow, including public profile booking entry points, availability-aware booking creation, role-based booking management, approvals, cancellations, completion handling, and review submission.
+- Expanded the profile experience for both students and alumni with richer editable fields, service presentation, and clearer profile copy.
+- Rebuilt onboarding and registration flows so richer profile data is captured earlier, with inline validation and chip-style inputs for multi-value fields such as skills, target companies, expertise, and desired roles.
+- Extended backend profile, dashboard, booking, review, and notification data handling to support the richer product experience.
+- Added safer local database initialization for existing SQLite setups by applying missing columns automatically during startup.
+- Verified the frontend with a fresh production build successfully.
+
+### What remains to do
+
+1. Add broader end-to-end regression coverage for onboarding, registration, search, bookings, and profile updates.
+2. Polish remaining edge cases in notifications, reviews, and empty states.
+3. Configure real Google OAuth, SMTP, and admin environment values for non-local deployments.
+4. Add production hardening such as rate limiting, stronger logging/monitoring, and deployment-ready security settings.
+5. Optionally persist more local-only settings/onboarding state to the backend if deeper account sync is desired.
 
 ## Google Sign-In / Sign-Up Support
 

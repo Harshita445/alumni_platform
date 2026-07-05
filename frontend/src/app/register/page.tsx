@@ -1,128 +1,84 @@
 import Link from "next/link";
+import { ArrowRight, Briefcase, GraduationCap } from "lucide-react";
+import { Playfair_Display } from "next/font/google";
+
+import styles from "./register.module.css";
+
+const playfair = Playfair_Display({
+  subsets: ["latin"],
+  weight: ["700"],
+  variable: "--font-register-serif",
+});
 
 export default function RegisterPage() {
   return (
-    <main
-      style={{
-        maxWidth: "700px",
-        margin: "80px auto",
-        padding: "24px",
-      }}
-    >
-      <div
-        style={{
-          background: "var(--surface)",
-          border: "1px solid var(--border)",
-          borderRadius: "var(--radius-lg)",
-          padding: "48px",
-          boxShadow: "var(--shadow-sm)",
-          textAlign: "center",
-        }}
-      >
-        <h1
-          style={{
-            fontSize: "clamp(36px, 5vw, 56px)",
-            marginBottom: "16px",
-          }}
-        >
-          Join Alumly
-        </h1>
+    <main className={`${styles.page} ${playfair.variable}`}>
+      <div className={styles.cornerDots} aria-hidden="true" />
 
-        <p
-          style={{
-            color: "var(--text-secondary)",
-            marginBottom: "40px",
-            lineHeight: 1.7,
-          }}
-        >
-          Choose how you would like to join the community.
-        </p>
+      <section className={styles.container} aria-labelledby="register-heading">
+        <div className={styles.header}>
+          <h1 id="register-heading">Join Alumly</h1>
 
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns:
-              "repeat(auto-fit, minmax(260px, 1fr))",
-            gap: "20px",
-          }}
-        >
-          <Link
-            href="/register/student"
-            style={cardStyle}
-          >
-            <h2
-              style={{
-                marginBottom: "12px",
-              }}
-            >
-              Student
-            </h2>
+          <div className={styles.divider} aria-hidden="true">
+            <span />
+            <strong>✦</strong>
+            <span />
+          </div>
 
-            <p
-              style={{
-                color: "var(--text-secondary)",
-                lineHeight: 1.6,
-              }}
-            >
-              Sign up using your Thapar email address
-              and get personalized mentor
-              recommendations.
+          <p>Choose how you would like to join the community.</p>
+        </div>
+
+        <div className={styles.roleGrid}>
+          <Link href="/register/student" className={styles.roleCard}>
+            <span className={styles.iconBadge} aria-hidden="true">
+              <GraduationCap size={32} strokeWidth={1.75} />
+            </span>
+
+            <h2>Student</h2>
+            <span className={styles.titleRule} aria-hidden="true" />
+
+            <p>
+              Sign up using your Thapar email address and get personalized
+              mentor recommendations.
             </p>
+
+            <span className={styles.cta}>
+              Join as Student
+              <ArrowRight size={19} strokeWidth={1.9} aria-hidden="true" />
+            </span>
           </Link>
 
-          <Link
-            href="/register/alumni"
-            style={cardStyle}
-          >
-            <h2
-              style={{
-                marginBottom: "12px",
-              }}
-            >
-              Alumni
-            </h2>
+          <Link href="/register/alumni" className={styles.roleCard}>
+            <span className={styles.iconBadge} aria-hidden="true">
+              <Briefcase size={32} strokeWidth={1.75} />
+            </span>
 
-            <p
-              style={{
-                color: "var(--text-secondary)",
-                lineHeight: 1.6,
-              }}
-            >
-              Share your experience, mentor
-              students, and grow your network.
+            <h2>Alumni</h2>
+            <span className={styles.titleRule} aria-hidden="true" />
+
+            <p>
+              Share your experience, mentor students, and grow your network.
             </p>
+
+            <span className={styles.cta}>
+              Join as Alumni
+              <ArrowRight size={19} strokeWidth={1.9} aria-hidden="true" />
+            </span>
           </Link>
         </div>
 
-        <p
-          style={{
-            marginTop: "32px",
-            color: "var(--text-secondary)",
-          }}
-        >
-          Already have an account?{" "}
-          <Link
-            href="/login"
-            style={{
-              color: "var(--primary)",
-              fontWeight: 600,
-            }}
-          >
-            Sign in
-          </Link>
-        </p>
-      </div>
+        <footer className={styles.footer}>
+          <div className={styles.divider} aria-hidden="true">
+            <span />
+            <strong>✦</strong>
+            <span />
+          </div>
+
+          <p>
+            Already have an account? <Link href="/login">Sign in</Link>
+          </p>
+        </footer>
+      </section>
     </main>
   );
 }
-
-const cardStyle = {
-  display: "block",
-  background: "var(--background)",
-  border: "1px solid var(--border)",
-  borderRadius: "var(--radius-md)",
-  padding: "32px",
-  textDecoration: "none",
-  color: "var(--text-primary)",
-  transition: "0.2s ease",
-};

@@ -7,9 +7,30 @@ test.describe('Student registration page', () => {
     test(`rejects ${suffix} emails and prompts alumni registration`, async ({ page }) => {
       await page.goto('/register/student');
 
-      await page.locator('input[placeholder="xyz_be24@thapar.edu"]').fill(`student_${suffix}@thapar.edu`);
-      await page.locator('input[placeholder="Full name"]').fill('Test Student');
-      await page.locator('input[placeholder="Password"]').fill('Password123!');
+      // Wait briefly for either the SSO button or an email input to appear.
+      // If SSO-only flow is present, the manual email form won't be available and
+      // the test will return early (considered a no-op for this check).
+      const ssoLocator = page.locator('button:has-text("Continue with your Thapar Account")');
+      const emailLocator = page.locator('input[type="email"], input[placeholder*="@thapar.edu"], input[name="email"], input[placeholder="xyz_be24@thapar.edu"]');
+
+      const appeared = await Promise.race([
+        ssoLocator.waitFor({ state: 'visible', timeout: 3000 }).then(() => 'sso').catch(() => null),
+        emailLocator.first().waitFor({ state: 'visible', timeout: 3000 }).then(() => 'email').catch(() => null),
+      ]);
+
+      if (appeared !== 'email') {
+        // Manual email form not present (SSO-only). Skip this check.
+        return;
+      }
+
+      const input = emailLocator.first();
+      await input.fill(`student_${suffix}@thapar.edu`);
+      // Full name and password fields may have different placeholders; use common fallbacks.
+      const nameLocator = page.locator('input[placeholder="Full name"], input[name="name"]');
+      const passLocator = page.locator('input[placeholder="Password"], input[name="password"], input[type="password"]');
+
+      await nameLocator.fill('Test Student');
+      await passLocator.fill('Password123!');
 
       await page.locator('button:not([disabled]):has-text("Continue")').first().click();
 

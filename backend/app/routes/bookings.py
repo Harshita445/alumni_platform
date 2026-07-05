@@ -15,6 +15,8 @@ from app.schemas.booking import (
     BookingCreate,
     BookingResponse,
 )
+from app.services.authorization import ensure_booking_participant
+from app.services.booking_service import BookingService
 
 router = APIRouter(
     prefix="/bookings",
@@ -40,6 +42,22 @@ def _create_notification(
         message=message,
     )
     db.add(notification)
+
+
+def _append_status_history(
+    booking: Booking,
+    status: BookingStatus,
+    note: str | None = None,
+):
+    history = booking.status_history or []
+    history.append(
+        {
+            "status": status.value,
+            "changed_at": datetime.utcnow().isoformat(),
+            "note": note,
+        }
+    )
+    booking.status_history = history
 
 
 def _booking_window(date_value: date, time_value: time):
@@ -94,7 +112,10 @@ def _has_overlapping_booking(
             Booking.status.in_(
                 [
                     BookingStatus.PENDING.value,
-                    BookingStatus.UPCOMING.value,
+                    BookingStatus.APPROVED.value,
+                    BookingStatus.AWAITING_PAYMENT.value,
+                    BookingStatus.PAID.value,
+                    BookingStatus.CONFIRMED.value,
                 ]
             )
         )
@@ -124,83 +145,8 @@ def create_booking(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    if current_user.role != "student":
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only students can create bookings.",
-        )
-
-    alumni = (
-        db.query(User)
-        .filter(User.id == payload.alumni_id)
-        .filter(User.role == "alumni")
-        .first()
-    )
-
-    if alumni is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Alumnus not found.",
-        )
-
-    requested_start, requested_end = _booking_window(
-        payload.date,
-        payload.time,
-    )
-
-    if requested_start <= datetime.now():
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Booking time must be in the future.",
-        )
-
-    if not _has_matching_availability(
-        db,
-        alumni_id=payload.alumni_id,
-        booking_start=requested_start,
-        booking_end=requested_end,
-    ):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Selected time is not within alumni availability.",
-        )
-
-    if _has_overlapping_booking(
-        db,
-        alumni_id=payload.alumni_id,
-        requested_start=requested_start,
-        requested_end=requested_end,
-    ):
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="This alumni slot overlaps an existing booking.",
-        )
-
-    booking = Booking(
-        student_id=current_user.id,
-        alumni_id=payload.alumni_id,
-        session_type=payload.session_type,
-        date=payload.date,
-        time=payload.time,
-        status=BookingStatus.PENDING.value,
-    )
-
-    db.add(booking)
-    db.commit()
-    db.refresh(booking)
-
-    _create_notification(
-        db,
-        user_id=alumni.id,
-        booking_id=booking.id,
-        message=(
-            f"New booking request from {current_user.email} "
-            f"for {booking.date} at {booking.time}."
-        ),
-    )
-    db.commit()
-
-    return booking
+    service = BookingService(db)
+    return service.create_booking(current_user, payload.alumni_id, payload)
 
 
 @router.get("/me", response_model=list[BookingResponse])
@@ -240,14 +186,7 @@ def get_booking(
             detail="Booking not found.",
         )
 
-    if (
-        booking.student_id != current_user.id
-        and booking.alumni_id != current_user.id
-    ):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not authorized to view this booking.",
-        )
+    ensure_booking_participant(booking, current_user)
 
     return booking
 
@@ -274,14 +213,7 @@ def update_booking_status(
             detail="Booking not found.",
         )
 
-    if (
-        booking.student_id != current_user.id
-        and booking.alumni_id != current_user.id
-    ):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not authorized to update this booking.",
-        )
+    ensure_booking_participant(booking, current_user)
 
     try:
         requested_status = BookingStatus(payload.status)
@@ -297,7 +229,7 @@ def update_booking_status(
             detail="Cannot revert booking to pending.",
         )
 
-    if requested_status == BookingStatus.UPCOMING:
+    if requested_status == BookingStatus.APPROVED:
         if current_user.id != booking.alumni_id:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
@@ -309,7 +241,12 @@ def update_booking_status(
                 detail="Only pending bookings can be accepted.",
             )
 
-        booking.status = BookingStatus.UPCOMING.value
+        booking.status = BookingStatus.APPROVED.value
+        _append_status_history(
+            booking,
+            BookingStatus.APPROVED,
+            "Mentor approved the request",
+        )
         _create_notification(
             db,
             user_id=booking.student_id,
@@ -318,6 +255,66 @@ def update_booking_status(
                 f"Your booking request for {booking.date} at {booking.time} "
                 f"was accepted by {current_user.email}."
             ),
+        )
+
+    elif requested_status == BookingStatus.AWAITING_PAYMENT:
+        if current_user.id != booking.student_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Only the booking student can proceed to payment.",
+            )
+        if booking.status != BookingStatus.APPROVED.value:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Only approved bookings can move to payment.",
+            )
+
+        booking.status = BookingStatus.AWAITING_PAYMENT.value
+        _append_status_history(
+            booking,
+            BookingStatus.AWAITING_PAYMENT,
+            "Student moved the booking to payment",
+        )
+
+    elif requested_status == BookingStatus.PAID:
+        if current_user.id != booking.student_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Only the booking student can confirm payment.",
+            )
+        if booking.status != BookingStatus.AWAITING_PAYMENT.value:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Only awaiting-payment bookings can be marked paid.",
+            )
+
+        booking.status = BookingStatus.PAID.value
+        _append_status_history(
+            booking,
+            BookingStatus.PAID,
+            "Student confirmed payment",
+        )
+
+    elif requested_status == BookingStatus.CONFIRMED:
+        if current_user.id != booking.alumni_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Only the assigned alumni can confirm this booking.",
+            )
+        if booking.status != BookingStatus.PAID.value:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Only paid bookings can be confirmed.",
+            )
+
+        booking.status = BookingStatus.CONFIRMED.value
+        booking.meeting_link = (
+            f"https://meet.google.com/{booking.id}{booking.alumni_id}{booking.student_id}"
+        )
+        _append_status_history(
+            booking,
+            BookingStatus.CONFIRMED,
+            "Mentor confirmed the session",
         )
 
     elif requested_status == BookingStatus.REJECTED:
@@ -333,6 +330,11 @@ def update_booking_status(
             )
 
         booking.status = BookingStatus.REJECTED.value
+        _append_status_history(
+            booking,
+            BookingStatus.REJECTED,
+            "Mentor rejected the request",
+        )
         _create_notification(
             db,
             user_id=booking.student_id,
@@ -351,14 +353,20 @@ def update_booking_status(
             )
         if booking.status not in (
             BookingStatus.PENDING.value,
-            BookingStatus.UPCOMING.value,
+            BookingStatus.APPROVED.value,
+            BookingStatus.AWAITING_PAYMENT.value,
         ):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Only pending or upcoming bookings can be cancelled.",
+                detail="Only pending, approved, or awaiting payment bookings can be cancelled.",
             )
 
         booking.status = BookingStatus.CANCELLED.value
+        _append_status_history(
+            booking,
+            BookingStatus.CANCELLED,
+            "Student cancelled the booking",
+        )
         _create_notification(
             db,
             user_id=booking.alumni_id,
@@ -375,13 +383,18 @@ def update_booking_status(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Only the assigned alumni can complete this booking.",
             )
-        if booking.status != BookingStatus.UPCOMING.value:
+        if booking.status != BookingStatus.CONFIRMED.value:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Only upcoming bookings can be completed.",
+                detail="Only confirmed bookings can be completed.",
             )
 
         booking.status = BookingStatus.COMPLETED.value
+        _append_status_history(
+            booking,
+            BookingStatus.COMPLETED,
+            "Mentor marked the session complete",
+        )
         _create_notification(
             db,
             user_id=booking.student_id,

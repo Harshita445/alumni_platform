@@ -19,6 +19,9 @@ class Settings(BaseSettings):
 
     GOOGLE_CLIENT_ID: str = ""
     ADMIN_API_KEY: str = ""
+    CLOUDINARY_CLOUD_NAME: str = ""
+    CLOUDINARY_API_KEY: str = ""
+    CLOUDINARY_API_SECRET: str = ""
     SMTP_HOST: str = ""
     SMTP_PORT: int = 25
     SMTP_USERNAME: str = ""

@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { useAuth } from "@/hooks/useAuth";
-import { fetchPendingAdminUsers, verifyAdminUser, type PendingAdminUser } from "@/lib/api";
+import { fetchPaymentSummary, fetchPendingAdminUsers, verifyAdminUser, type PendingAdminUser } from "@/lib/api";
 
 export default function AdminDashboardPage() {
   const router = useRouter();
@@ -14,11 +14,34 @@ export default function AdminDashboardPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const [paymentSummary, setPaymentSummary] = useState<{
+    total_gross?: number;
+    total_platform_fee?: number;
+    total_mentor_amount?: number;
+    pending_count?: number;
+    paid_count?: number;
+  } | null>(null);
 
   useEffect(() => {
     if (!user) {
       router.replace("/login");
+      return;
     }
+
+    if (user.role !== "alumni") {
+      return;
+    }
+
+    const loadPaymentSummary = async () => {
+      try {
+        const summary = await fetchPaymentSummary(user.access_token);
+        setPaymentSummary(summary);
+      } catch {
+        setPaymentSummary(null);
+      }
+    };
+
+    loadPaymentSummary();
   }, [router, user]);
 
   const loadPendingUsers = async () => {
@@ -107,6 +130,16 @@ export default function AdminDashboardPage() {
       {error ? <p style={{ color: "var(--danger)", marginBottom: "16px" }}>{error}</p> : null}
       {statusMessage ? <p style={{ color: "var(--accent)", marginBottom: "16px" }}>{statusMessage}</p> : null}
 
+      <section style={{ display: "grid", gap: "16px", marginBottom: "24px" }}>
+        <div style={{ display: "grid", gap: "12px", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))" }}>
+          <MetricCard label="Gross volume" value={`₹${(paymentSummary?.total_gross ?? 0).toLocaleString("en-IN")}`} />
+          <MetricCard label="Platform fees" value={`₹${(paymentSummary?.total_platform_fee ?? 0).toLocaleString("en-IN")}`} />
+          <MetricCard label="Mentor payouts" value={`₹${(paymentSummary?.total_mentor_amount ?? 0).toLocaleString("en-IN")}`} />
+          <MetricCard label="Pending payments" value={paymentSummary?.pending_count ?? 0} />
+          <MetricCard label="Paid sessions" value={paymentSummary?.paid_count ?? 0} />
+        </div>
+      </section>
+
       <div style={{ display: "grid", gap: "16px" }}>
         {pendingCount === 0 ? (
           <div style={{ padding: "24px", border: "1px solid var(--border)", borderRadius: "16px", background: "var(--surface)" }}>
@@ -143,5 +176,14 @@ export default function AdminDashboardPage() {
         ))}
       </div>
     </main>
+  );
+}
+
+function MetricCard({ label, value }: { label: string; value: number | string }) {
+  return (
+    <div style={{ border: "1px solid var(--border)", borderRadius: "16px", padding: "16px", background: "var(--surface)" }}>
+      <p style={{ margin: "0 0 8px", color: "var(--text-secondary)" }}>{label}</p>
+      <h2 style={{ margin: 0, fontSize: "1.25rem" }}>{value}</h2>
+    </div>
   );
 }

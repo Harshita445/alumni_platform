@@ -3,21 +3,70 @@ import json
 import os
 import sys
 import time
+from uuid import uuid4
 
 import pytest
 
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 
 from fastapi.testclient import TestClient
+from sqlalchemy import or_
 
 from app.database import SessionLocal
 from app.main import app
+from app.models.booking import Booking, BookingStatus
+from app.models.notification import Notification
 from app.models.profile import Profile
 from app.models.user import User
 from app.routes import auth as auth_routes
 from app.core.security import hash_password
 
 client = TestClient(app)
+
+
+def test_user_deletion_cascades_profile_cleanup():
+    db = SessionLocal()
+    email = f"cascade-profile-{uuid4().hex[:8]}@example.com"
+    user_id = None
+    try:
+        user = User(
+            email=email,
+            hashed_password="unused",
+            role="alumni",
+            auth_provider="email",
+            is_verified=True,
+        )
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+        user_id = user.id
+
+        profile = Profile(
+            user_id=user_id,
+            full_name="Cascade Profile",
+            company="Test Company",
+            designation="Lead Engineer",
+        )
+        db.add(profile)
+        db.commit()
+        db.refresh(profile)
+
+        db.query(Notification).filter(Notification.user_id == user_id).delete(synchronize_session=False)
+        db.query(Booking).filter(or_(Booking.student_id == user_id, Booking.alumni_id == user_id)).delete(synchronize_session=False)
+        db.commit()
+
+        db.delete(user)
+        db.commit()
+
+        assert db.query(Profile).filter(Profile.user_id == user_id).count() == 0
+    finally:
+        if user_id is not None:
+            db.query(Profile).filter(Profile.user_id == user_id).delete(synchronize_session=False)
+            db.query(Notification).filter(Notification.user_id == user_id).delete(synchronize_session=False)
+            db.query(Booking).filter(or_(Booking.student_id == user_id, Booking.alumni_id == user_id)).delete(synchronize_session=False)
+            db.query(User).filter(User.id == user_id).delete(synchronize_session=False)
+            db.commit()
+        db.close()
 
 
 def test_profile_update_rejects_role_escape_fields_for_students():
@@ -51,6 +100,43 @@ def test_register_rejects_alumni_role_for_student_email_patterns():
         assert "student" in response.json()["detail"].lower()
     finally:
         db.query(User).filter(User.email == email).delete()
+        db.commit()
+        db.close()
+
+
+def test_register_normalizes_email_and_login_accepts_case_variants():
+    db = SessionLocal()
+    email = "CaseSensitiveUser@thapar.edu"
+    try:
+        db.query(User).filter(User.email == email.lower()).delete()
+        db.commit()
+
+        response = client.post(
+            "/auth/register",
+            json={
+                "email": email,
+                "password": "Password123!",
+                "role": "student",
+            },
+        )
+
+        assert response.status_code == 200
+        user = db.query(User).filter(User.email == email.lower()).first()
+        assert user is not None
+        assert user.email == email.lower()
+
+        login_response = client.post(
+            "/auth/login",
+            data={
+                "username": email.upper(),
+                "password": "Password123!",
+            },
+        )
+
+        assert login_response.status_code == 200
+        assert login_response.json()["access_token"]
+    finally:
+        db.query(User).filter(User.email == email.lower()).delete()
         db.commit()
         db.close()
 
@@ -96,6 +182,36 @@ def test_login_rejects_student_email_patterns_with_student_message():
     assert "student" in response.json()["detail"].lower()
 
 
+def test_demo_login_creates_a_student_session_with_booking():
+    db = SessionLocal()
+    try:
+        email = "demo-student@example.com"
+        db.query(Booking).filter(Booking.student_id == db.query(User.id).filter(User.email == email).scalar()).delete(synchronize_session=False)
+        db.query(User).filter(User.email == email).delete()
+        db.commit()
+
+        response = client.post(
+            "/auth/demo-login",
+            json={"role": "student"},
+        )
+
+        assert response.status_code == 200
+        assert response.json()["access_token"]
+
+        user = db.query(User).filter(User.email == email).first()
+        assert user is not None
+        assert user.is_verified is True
+
+        booking = db.query(Booking).filter(Booking.student_id == user.id).first()
+        assert booking is not None
+        assert booking.status == BookingStatus.APPROVED.value
+    finally:
+        db.query(Booking).filter(Booking.student_id == db.query(User.id).filter(User.email == "demo-student@example.com").scalar()).delete(synchronize_session=False)
+        db.query(User).filter(User.email == "demo-student@example.com").delete()
+        db.commit()
+        db.close()
+
+
 def test_get_alumni_is_publicly_accessible():
     response = client.get("/alumni")
 
@@ -107,6 +223,12 @@ def test_get_alumni_details_is_publicly_accessible():
     db = SessionLocal()
 
     try:
+        db.query(Profile).filter(
+            Profile.user_id == db.query(User.id).filter(User.email == "public-alumni@example.com").scalar()
+        ).delete(synchronize_session=False)
+        db.query(User).filter(User.email == "public-alumni@example.com").delete()
+        db.commit()
+
         user = User(
             email="public-alumni@example.com",
             hashed_password="unused",

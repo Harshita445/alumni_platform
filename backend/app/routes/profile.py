@@ -47,6 +47,17 @@ def get_my_profile(
         "graduation_year": profile.graduation_year,
         "bio": profile.bio,
         "linkedin_url": profile.linkedin_url,
+        "profile_picture_url": profile.profile_picture_url,
+        "profile_picture_public_id": profile.profile_picture_public_id,
+        "resume_url": profile.resume_url,
+        "resume_public_id": profile.resume_public_id,
+        "skills": profile.skills,
+        "career_interests": profile.career_interests,
+        "goals": profile.goals,
+        "target_companies": profile.target_companies,
+        "desired_roles": profile.desired_roles,
+        "expertise": profile.expertise,
+        "mentorship_services": profile.mentorship_services,
     }
 
     if current_user.role == UserRole.ALUMNI.value:
@@ -81,7 +92,20 @@ def update_profile(
         update_data.pop("company", None)
         update_data.pop("designation", None)
 
-    allowed_fields = {"full_name", "branch", "graduation_year", "bio", "linkedin_url"}
+    allowed_fields = {
+        "full_name",
+        "branch",
+        "graduation_year",
+        "bio",
+        "linkedin_url",
+        "skills",
+        "career_interests",
+        "goals",
+        "target_companies",
+        "desired_roles",
+        "expertise",
+        "mentorship_services",
+    }
     if current_user.role == UserRole.ALUMNI.value:
         allowed_fields.update({"company", "designation"})
 
@@ -101,6 +125,17 @@ def update_profile(
         "graduation_year": profile.graduation_year,
         "bio": profile.bio,
         "linkedin_url": profile.linkedin_url,
+        "profile_picture_url": profile.profile_picture_url,
+        "profile_picture_public_id": profile.profile_picture_public_id,
+        "resume_url": profile.resume_url,
+        "resume_public_id": profile.resume_public_id,
+        "skills": profile.skills,
+        "career_interests": profile.career_interests,
+        "goals": profile.goals,
+        "target_companies": profile.target_companies,
+        "desired_roles": profile.desired_roles,
+        "expertise": profile.expertise,
+        "mentorship_services": profile.mentorship_services,
     }
 
     if current_user.role == UserRole.ALUMNI.value:

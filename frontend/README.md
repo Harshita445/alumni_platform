@@ -71,19 +71,16 @@ npm run start
 ## Current Pages
 
 - `/`: landing page.
-- `/login`: live backend login.
-- `/register`: account type choice.
-- `/register/student`: student registration with derived graduation year and profile update.
-- `/register/alumni`: alumni registration.
-- `/dashboard`: student/alumni dashboard from backend data.
-- `/search`: alumni discovery from backend data with client-side filters.
-- `/profile`: current-user profile from local stored auth data.
-- `/profile/[id]`: alumni detail fetched from backend.
-- `/bookings`: student booking creation.
-- `/bookings/confirmation`: localStorage-based booking confirmation.
-- `/saved`: saved alumni.
-- `/settings`: local-only settings.
-- `/onboarding`: local-only preference capture.
+- `/login`, `/register/student`, and `/register/alumni`: live authentication and richer registration flows.
+- `/onboarding`: editable profile completion flow with inline validation and tag-style inputs.
+- `/dashboard`: role-aware dashboard data from the backend.
+- `/search`: premium alumni discovery experience with filtering and better empty/error states.
+- `/profile`: authenticated profile management.
+- `/profile/[id]`: public alumni profile with booking entry points.
+- `/bookings`: booking creation and management for both students and alumni.
+- `/saved`: saved alumni list.
+- `/settings`: local settings surface.
+- `/mentorship`: mentorship hub experience.
 
 ## Current Backend Integration
 
@@ -95,49 +92,34 @@ Implemented frontend API helpers in `src/lib/api.ts`:
 - Fetch/update profile.
 - Fetch alumni list/details.
 - Fetch/save/remove saved alumni.
-- Create booking.
-- Fetch dashboard.
-- Fetch notifications.
-- Mark notification read.
+- Create and manage bookings.
+- Fetch dashboard data.
+- Fetch notifications and mark them read.
+- Submit reviews.
 
-Not yet surfaced in UI:
+## Current Status
 
-- Notification list/read controls.
-- Booking accept/reject/cancel/complete controls.
-- Review creation.
-- Review listing.
-- Server-side alumni filtering.
+- The core discovery, booking, dashboard, onboarding, and profile experiences are now implemented and wired up in the current codebase.
+- The frontend production build was verified successfully.
+- The remaining work is focused on polish, hardening, and broader test coverage rather than core feature gaps.
 
 ## Local Storage Keys
 
 - `current-user`: auth token, role, email, id, and profile snapshot.
-- `latest-booking`: latest booking response used by confirmation page.
+- `latest-booking`: latest booking response used by confirmation flows.
 - `student-profile`: onboarding preferences.
 - `app-settings`: settings toggles and timezone.
 
 ## Verified Status
 
 - `npm run lint` passes.
-- Lint warning remains in `src/app/page.tsx`: raw `<img>` should be replaced by Next `<Image />` or intentionally kept.
 - `npx tsc --noEmit` passes.
-- `npm run build` currently fails in this environment because Next infers `C:\Users\hp` as workspace root and hits access denied.
-- `npm run build -- --webpack` also fails because restricted network blocks Google font fetching and the root access issue remains.
+- `npm run build` succeeds in the current workspace setup.
 
-## Known UI/Data Issues
+## Remaining Work
 
-- Several strings contain mojibake characters from broken Unicode encoding.
-- Settings and onboarding are local-only and not persisted to backend.
-- Booking confirmation is local-only and depends on `latest-booking`.
-- Profile page uses stored profile data instead of refetching.
-- Empty auth form component files exist under `src/components/auth`.
-
-## High Priority Frontend Work
-
-1. Configure Next root/build behavior.
-2. Make fonts build-safe in restricted environments.
-3. Finish mojibake cleanup if any broken strings reappear.
-4. Add booking management UI.
-5. Add notification UI.
-6. Add review UI.
-7. Decide which localStorage-only flows need backend persistence.
-8. Add frontend tests for auth, search, bookings, saved alumni, and dashboards.
+1. Add deeper end-to-end tests for onboarding, registration, search, bookings, saved alumni, and profile updates.
+2. Polish notification and review presentation further, especially around empty states and edge cases.
+3. Configure real Google OAuth, SMTP, and admin environment values for production-like environments.
+4. Add production hardening such as rate limiting, logging, monitoring, and deployment-safe security settings.
+5. Decide whether any additional local-only settings flows should be persisted to the backend for deeper sync.

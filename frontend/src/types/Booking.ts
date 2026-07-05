@@ -1,6 +1,9 @@
 export type BookingStatus =
   | "pending"
-  | "upcoming"
+  | "approved"
+  | "awaiting_payment"
+  | "paid"
+  | "confirmed"
   | "completed"
   | "cancelled"
   | "rejected";
@@ -19,9 +22,14 @@ export interface Booking {
   date: string;
   time: string;
   status: BookingStatus;
-  created_at?: string | null;
   message?: string | null;
+  timezone?: string | null;
+  meeting_link?: string | null;
+  payment_id?: number | null;
+  payment_status?: string | null;
+  payment_gateway?: string | null;
   status_history?: BookingStatusEntry[];
+  created_at?: string | null;
 }
 
 export interface CreateBookingPayload {

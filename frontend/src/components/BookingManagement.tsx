@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 
 import Badge from "@/components/Badge";
@@ -302,18 +303,14 @@ function BookingCard({
   ) => Promise<void>;
 }) {
   const isAlumni = user.role === "alumni";
-  const canAcceptOrReject =
-    isAlumni && booking.status === "pending";
-  const canComplete =
-    isAlumni && booking.status === "upcoming";
-  const canCancel =
+  const canAcceptOrReject = isAlumni && booking.status === "pending";
+  const canConfirm = isAlumni && booking.status === "paid";
+  const canComplete = isAlumni && booking.status === "confirmed";
+  const canPay =
     user.role === "student" &&
-    (booking.status === "pending" ||
-      booking.status === "upcoming");
-  const canReview =
-    user.role === "student" &&
-    booking.status === "completed" &&
-    !reviewed;
+    (booking.status === "approved" || booking.status === "awaiting_payment");
+  const canCancel = user.role === "student" && (booking.status === "pending" || booking.status === "approved" || booking.status === "awaiting_payment");
+  const canReview = user.role === "student" && booking.status === "completed" && !reviewed;
   const counterpartLabel = isAlumni
     ? `Student #${booking.student_id}`
     : `Alumni #${booking.alumni_id}`;
@@ -401,6 +398,30 @@ function BookingCard({
         </div>
       ) : null}
 
+      {booking.meeting_link ? (
+        <div
+          style={{
+            background: "rgba(108, 122, 83, 0.08)",
+            border: "1px solid var(--border)",
+            borderRadius: "var(--radius-md)",
+            padding: "14px 16px",
+            marginBottom: "16px",
+          }}
+        >
+          <div style={{ fontWeight: 600, marginBottom: "6px" }}>
+            Meeting link
+          </div>
+          <a
+            href={booking.meeting_link}
+            target="_blank"
+            rel="noreferrer"
+            style={{ color: "var(--primary)" }}
+          >
+            {booking.meeting_link}
+          </a>
+        </div>
+      ) : null}
+
       <div
         style={{
           background: "var(--background)",
@@ -426,7 +447,7 @@ function BookingCard({
         </ul>
       </div>
 
-      {canAcceptOrReject || canComplete || canCancel ? (
+      {canAcceptOrReject || canComplete || canCancel || canPay ? (
         <div
           style={{
             display: "flex",
@@ -438,9 +459,9 @@ function BookingCard({
             <>
               <BookingActionButton
                 disabled={updating}
-                label={updating ? "Updating..." : "Accept"}
+                label={updating ? "Updating..." : "Approve"}
                 onClick={() =>
-                  onStatusChange(booking.id, "upcoming")
+                  onStatusChange(booking.id, "approved")
                 }
                 variant="primary"
               />
@@ -454,6 +475,17 @@ function BookingCard({
             </>
           ) : null}
 
+          {canConfirm ? (
+            <BookingActionButton
+              disabled={updating}
+              label={updating ? "Updating..." : "Confirm Session"}
+              onClick={() =>
+                onStatusChange(booking.id, "confirmed")
+              }
+              variant="primary"
+            />
+          ) : null}
+
           {canComplete ? (
             <BookingActionButton
               disabled={updating}
@@ -465,6 +497,12 @@ function BookingCard({
               }
               variant="primary"
             />
+          ) : null}
+
+          {canPay ? (
+            <Link href={`/payment/${booking.id}`} style={{ ...actionButtonStyle, background: "var(--primary)", color: "#fff", textDecoration: "none", display: "inline-flex" }}>
+              Pay Securely
+            </Link>
           ) : null}
 
           {canCancel ? (
@@ -507,8 +545,14 @@ function getStatusLabel(status: BookingStatus) {
   switch (status) {
     case "pending":
       return "Pending";
-    case "upcoming":
-      return "Accepted";
+    case "approved":
+      return "Approved";
+    case "awaiting_payment":
+      return "Awaiting Payment";
+    case "paid":
+      return "Paid";
+    case "confirmed":
+      return "Confirmed";
     case "completed":
       return "Completed";
     case "cancelled":
@@ -524,7 +568,13 @@ function getStatusDescriptor(status: BookingStatus) {
   switch (status) {
     case "pending":
       return "Awaiting mentor response";
-    case "upcoming":
+    case "approved":
+      return "Mentor approved the request";
+    case "awaiting_payment":
+      return "Awaiting student payment";
+    case "paid":
+      return "Payment received";
+    case "confirmed":
       return "Session confirmed";
     case "completed":
       return "Session completed";

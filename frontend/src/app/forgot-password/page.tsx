@@ -16,9 +16,10 @@ export default function ForgotPasswordPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await requestPasswordReset(email);
+      const res = (await requestPasswordReset(email)) as { message: string; token?: string };
+      const hasToken = typeof res?.token === "string";
       setSuccess(
-        (res as any).token
+        hasToken
           ? "Password reset token generated (dev). Check email or test output."
           : "If an account exists, a password reset email has been sent."
       );
