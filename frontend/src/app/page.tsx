@@ -43,19 +43,19 @@ const features = [
 const audiences = [
   {
     Icon: GraduationCap,
-    title: "I&apos;m a student",
+    title: "Join as a student",
     description:
-      "Connect with alumni, get mentorship, prepare for interviews, and discover opportunities.",
-    cta: "Explore mentors",
-    href: "/search",
+      "Create your student profile, connect with alumni, and request mentorship or guidance.",
+    cta: "Join as student",
+    href: "/register/student",
   },
   {
     Icon: UserRoundCheck,
-    title: "I&apos;m an alumni",
+    title: "Join as an alumni",
     description:
-      "Share your experience, guide students, and strengthen the Thapar network.",
-    cta: "Become a mentor",
-    href: "/register",
+      "Create your alumni profile, guide students, and strengthen the Thapar network.",
+    cta: "Join as alumni",
+    href: "/register/alumni",
   },
 ];
 
@@ -107,8 +107,8 @@ export default function HomePage() {
               Explore alumni
             </Link>
 
-            <Link className="btn btn-secondary" href="/register">
-              I&apos;m an alumni
+            <Link className="btn btn-secondary" href="/register/alumni">
+              Join as an alumni
             </Link>
           </div>
         </div>
