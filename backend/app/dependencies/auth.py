@@ -26,7 +26,7 @@ def get_current_user(
     try:
         payload = jwt.decode(
             token,
-            settings.SECRET_KEY,
+            settings.signing_secret,
             algorithms=[settings.ALGORITHM],
         )
         user_id = payload.get("sub")

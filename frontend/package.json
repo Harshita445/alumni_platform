@@ -6,8 +6,11 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint",
-    "test:e2e": "playwright test"
+    "lint": "eslint .",
+    "test": "echo \"No frontend unit tests configured yet\"",
+    "test:e2e": "playwright test",
+    "format": "echo \"Formatting not configured\"",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "lucide-react": "^0.470.0",

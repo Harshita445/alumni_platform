@@ -1,6 +1,13 @@
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
+import logging
+from collections import defaultdict
+from contextlib import asynccontextmanager
+from time import time
 
+from fastapi import FastAPI, Request, Response
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
+
+from app.core.config import settings
 from app.database import Base, engine, ensure_schema
 
 import app.models.user
@@ -28,31 +35,79 @@ from app.routes.payments import router as payments_router
 from app.routes.uploads import router as uploads_router
 
 
+logger = logging.getLogger("alumly")
+logging.basicConfig(level=logging.INFO)
+
 ensure_schema()
 Base.metadata.create_all(bind=engine)
+
+request_counts: dict[tuple[str, str], list[float]] = defaultdict(list)
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    logger.info("Starting Alumly API")
+    yield
+    engine.dispose()
+    logger.info("Shutting down Alumly API")
+
 
 app = FastAPI(
     title="Alumni Network API",
     version="1.0.0",
+    lifespan=lifespan,
 )
 
+app.add_middleware(GZipMiddleware)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-        "http://localhost:3001",
-        "http://127.0.0.1:3001",
-    ],
+    allow_origins=settings.cors_origins + ["http://localhost:3000", "http://127.0.0.1:3000", "http://localhost:3001", "http://127.0.0.1:3001"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
 
+@app.middleware("http")
+async def add_security_headers(request: Request, call_next):
+    response = await call_next(request)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    response.headers["Permissions-Policy"] = "geolocation=(), microphone=()"
+    return response
+
+
+@app.middleware("http")
+async def rate_limit(request: Request, call_next):
+    client_ip = request.client.host if request.client else "unknown"
+    now = time()
+    window = request_counts[(client_ip, request.url.path)]
+    window[:] = [stamp for stamp in window if now - stamp < 60]
+    if len(window) >= 120:
+        return Response(status_code=429, content="Too Many Requests")
+    window.append(now)
+    return await call_next(request)
+
+
 @app.get("/")
 def health_check():
     return {"message": "API is running"}
+
+
+@app.get("/health")
+def health():
+    return {"status": "ok", "version": "1.0.0"}
+
+
+@app.get("/version")
+def version():
+    return {"version": "1.0.0"}
+
+
+@app.get("/status")
+def status():
+    return {"status": "ok", "version": "1.0.0"}
 
 
 app.include_router(auth_router)

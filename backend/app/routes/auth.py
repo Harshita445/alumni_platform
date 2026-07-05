@@ -529,7 +529,7 @@ def password_reset_confirm(
     db: Session = Depends(get_db),
 ):
     try:
-        claims = jwt.decode(payload.token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        claims = jwt.decode(payload.token, settings.signing_secret, algorithms=[settings.ALGORITHM])
     except JWTError:
         raise HTTPException(status_code=400, detail="Invalid or expired token")
 

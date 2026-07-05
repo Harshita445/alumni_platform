@@ -1,15 +1,15 @@
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
-    DATABASE_URL: str = "sqlite:///./app.db"
+    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 
+    DATABASE_URL: str = "sqlite:///./app.db"
     SECRET_KEY: str = (
         "cfe5c41e9f057ff9808833d25287581139172d1caf0f715d56fa32b58714bb5d"
     )
-
+    JWT_SECRET: str = ""
     ALGORITHM: str = "HS256"
-
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
 
     PASSWORD_MIN_LENGTH: int = 8
@@ -18,18 +18,32 @@ class Settings(BaseSettings):
     PASSWORD_REQUIRE_SPECIAL: bool = True
 
     GOOGLE_CLIENT_ID: str = ""
+    GOOGLE_CLIENT_SECRET: str = ""
     ADMIN_API_KEY: str = ""
     CLOUDINARY_CLOUD_NAME: str = ""
     CLOUDINARY_API_KEY: str = ""
     CLOUDINARY_API_SECRET: str = ""
+    FRONTEND_URL: str = "http://localhost:3000"
+    BACKEND_CORS_ORIGINS: str = "http://localhost:3000,http://127.0.0.1:3000"
+    RAZORPAY_KEY_ID: str = ""
+    RAZORPAY_KEY_SECRET: str = ""
+    RESEND_API_KEY: str = ""
     SMTP_HOST: str = ""
     SMTP_PORT: int = 25
     SMTP_USERNAME: str = ""
     SMTP_PASSWORD: str = ""
     SMTP_FROM_EMAIL: str = ""
 
-    class Config:
-        env_file = ".env"
+    @property
+    def signing_secret(self) -> str:
+        return self.JWT_SECRET or self.SECRET_KEY
+
+    @property
+    def cors_origins(self) -> list[str]:
+        origins = [origin.strip() for origin in self.BACKEND_CORS_ORIGINS.split(",") if origin.strip()]
+        if self.FRONTEND_URL:
+            origins.append(self.FRONTEND_URL)
+        return list(dict.fromkeys(origins))
 
 
 settings = Settings()

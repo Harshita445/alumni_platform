@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import "./globals.css";
 
 import Navbar from "@/components/Navbar";
@@ -15,6 +16,21 @@ const dmSerif = DM_Serif_Display({
   weight: "400",
   variable: "--font-heading",
 });
+
+export const metadata: Metadata = {
+  title: "Alumly",
+  description: "A modern alumni mentorship platform",
+  openGraph: {
+    title: "Alumly",
+    description: "A modern alumni mentorship platform",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Alumly",
+    description: "A modern alumni mentorship platform",
+  },
+};
 
 export default function RootLayout({
   children,
