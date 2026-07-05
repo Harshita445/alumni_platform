@@ -52,6 +52,7 @@ export default function LoginPage() {
 
   const handleGoogleSubmit = async (role: "student" | "alumni") => {
     setError(null);
+    setIsSubmitting(true);
 
     try {
       await promptGoogleSignIn(role, async (credential) => {
@@ -69,6 +70,8 @@ export default function LoginPage() {
           ? err.message
           : "Google sign-in failed."
       );
+    } finally {
+      setIsSubmitting(false);
     }
   };
 

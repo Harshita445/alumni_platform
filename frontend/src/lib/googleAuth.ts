@@ -71,16 +71,24 @@ export async function promptGoogleSignIn(
     throw new Error("Google sign-in is not available right now.");
   }
 
-  window.google.accounts.id.initialize({
-    client_id: clientId,
-    callback: async (response) => {
-      if (!response.credential) {
-        throw new Error("Google sign-in was cancelled.");
-      }
+  return new Promise<void>((resolve, reject) => {
+    window.google?.accounts?.id?.initialize({
+      client_id: clientId,
+      callback: async (response) => {
+        try {
+          if (!response.credential) {
+            reject(new Error("Google sign-in was cancelled."));
+            return;
+          }
 
-      await onCredential(response.credential);
-    },
+          await onCredential(response.credential);
+          resolve();
+        } catch (error) {
+          reject(error instanceof Error ? error : new Error("Google sign-in failed."));
+        }
+      },
+    });
+
+    window.google?.accounts?.id?.prompt();
   });
-
-  window.google.accounts.id.prompt();
 }

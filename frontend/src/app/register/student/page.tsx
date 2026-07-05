@@ -34,10 +34,10 @@ export default function StudentRegisterPage() {
 
   const handleGoogleSubmit = async () => {
     setError(null);
+    setIsSubmitting(true);
 
     try {
       await promptGoogleSignIn("student", async (credential) => {
-        setIsSubmitting(true);
         const storedUser = await googleAuth({
           role: "student",
           email: "",
@@ -47,7 +47,6 @@ export default function StudentRegisterPage() {
 
         if (!storedUser.email || !isEligibleStudentEmail(storedUser.email)) {
           setShowEligibilityModal(true);
-          setIsSubmitting(false);
           return;
         }
 

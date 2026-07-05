@@ -70,6 +70,7 @@ export default function AlumniRegisterPage() {
 
   const handleGoogleSubmit = async () => {
     setError(null);
+    setIsSubmitting(true);
 
     try {
       await promptGoogleSignIn("alumni", async (credential) => {
@@ -83,6 +84,8 @@ export default function AlumniRegisterPage() {
       });
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Google sign-in failed.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
