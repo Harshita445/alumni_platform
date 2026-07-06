@@ -688,15 +688,15 @@ def login(
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: Session = Depends(get_db),
 ):
-    username = _normalize_email(form_data.username)
+    email = _normalize_email(form_data.username)
 
-    if _looks_like_student_email(username):
+    if _looks_like_student_email(email):
         raise HTTPException(
             status_code=403,
             detail="It looks like you are a student. Please sign in as a student instead.",
         )
 
-    user = _get_user_by_email(db, username)
+    user = _get_user_by_email(db, email)
 
     if not user:
         raise HTTPException(
@@ -704,7 +704,7 @@ def login(
             detail="Invalid credentials",
         )
 
-    if _looks_like_student_email(username):
+    if _looks_like_student_email(email):
         raise HTTPException(
             status_code=403,
             detail="It looks like you are a student. Please sign in as a student instead.",
