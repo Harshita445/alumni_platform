@@ -147,7 +147,7 @@ application/x-www-form-urlencoded
 Fields:
 
 ```text
-username=user@example.com
+email=user@example.com
 password=password
 ```
 
