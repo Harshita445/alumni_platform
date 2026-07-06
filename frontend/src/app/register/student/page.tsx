@@ -29,13 +29,12 @@ const playfair = Playfair_Display({
 });
 
 const alumniCandidatePattern = /_be2[3456](?:$|_)/i;
-const usernamePattern = /^[A-Za-z0-9_]{3,20}$/;
 
 export default function StudentRegisterPage() {
   const router = useRouter();
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
-  const [username, setUsername] = useState("");
+  
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [isGoogleReady, setIsGoogleReady] = useState(false);
@@ -105,9 +104,7 @@ export default function StudentRegisterPage() {
       return "This email looks like an alumni email. Please register as an alumni instead.";
     }
 
-    if (!usernamePattern.test(username.trim())) {
-      return "Username must be 3-20 characters and use only letters, numbers, or underscores.";
-    }
+    // Username is no longer required for student registration.
 
     if (
       password.length < 8 ||
@@ -210,16 +207,7 @@ export default function StudentRegisterPage() {
                 />
               </label>
 
-              <label className={styles.inputWrap}>
-                <User size={20} strokeWidth={1.8} aria-hidden="true" />
-                <input
-                  name="username"
-                  placeholder="Choose a unique username"
-                  value={username}
-                  onChange={(event) => setUsername(event.target.value)}
-                  autoComplete="username"
-                />
-              </label>
+              
 
               <label className={styles.inputWrap}>
                 <Lock size={20} strokeWidth={1.8} aria-hidden="true" />
