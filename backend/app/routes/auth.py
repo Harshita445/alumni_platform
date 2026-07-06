@@ -1,9 +1,10 @@
 import base64
+import hashlib
 import json
 import re
 import smtplib
 import time
-from datetime import date, time, timedelta
+from datetime import date, datetime, time, timedelta, timezone
 from email.message import EmailMessage
 from jose import jwt, JWTError
 import os
@@ -18,7 +19,10 @@ from sqlalchemy.orm import Session
 from app.core.config import settings
 from app.core.security import (
     create_access_token,
+    create_refresh_token,
     hash_password,
+    hash_refresh_token,
+    verify_refresh_token,
     verify_password,
 )
 from app.database import get_db
@@ -29,8 +33,12 @@ from app.models.profile import Profile
 from app.models.user import User
 
 from app.schemas.auth import (
+    AdminRejectRequest,
+    AlumniPersonalRegisterRequest,
     GoogleAuthRequest,
     GoogleAuthResponse,
+    LogoutRequest,
+    RefreshRequest,
     RegisterRequest,
     TokenResponse,
 )
@@ -64,6 +72,103 @@ def _get_user_by_email(db: Session, email: str | None) -> User | None:
         return None
 
     return db.query(User).filter(func.lower(User.email) == normalized_email).first()
+
+
+def _get_user_by_provider_id(db: Session, provider_id: str | None) -> User | None:
+    if not provider_id:
+        return None
+
+    return db.query(User).filter(User.provider_id == provider_id).first()
+
+
+def _now() -> datetime:
+    return datetime.now(timezone.utc)
+
+
+def _verification_status(user: User) -> str:
+    if getattr(user, "verification_status", None) in {"pending", "approved", "rejected"}:
+        return user.verification_status
+
+    if user.is_pending_verification:
+        return "pending"
+
+    return "approved" if user.is_verified else "rejected"
+
+
+def _frontend_status(user: User) -> str:
+    status = _verification_status(user)
+    return "verified" if status == "approved" else status
+
+
+def _issue_token_pair(user: User) -> dict[str, str]:
+    access_token = create_access_token(
+        {
+            "sub": str(user.id),
+            "email": user.email,
+            "role": user.role,
+        }
+    )
+    refresh_token = create_refresh_token()
+    user.refresh_token_hash = hash_refresh_token(refresh_token)
+    user.last_login = _now()
+    user.updated_at = _now()
+
+    return {
+        "access_token": access_token,
+        "refresh_token": refresh_token,
+        "token_type": "bearer",
+    }
+
+
+def _get_or_create_profile(db: Session, user: User) -> Profile:
+    profile = db.query(Profile).filter(Profile.user_id == user.id).first()
+    if profile is None:
+        profile = Profile(user_id=user.id)
+        db.add(profile)
+        db.flush()
+    return profile
+
+
+def _parse_be_batch(email: str) -> int | None:
+    local_part = email.split("@", 1)[0]
+    match = re.search(r"(?:^|[_\-.])be(\d{2})(?:$|[_\-.])", local_part, flags=re.IGNORECASE)
+    if not match:
+        return None
+    return 2000 + int(match.group(1))
+
+
+def _is_thapar_email(email: str) -> bool:
+    return email.lower().endswith("@thapar.edu")
+
+
+def _is_student_google_email(email: str) -> bool:
+    normalized = _normalize_email(email)
+    if not _is_thapar_email(normalized):
+        return False
+
+    local_part = normalized.split("@", 1)[0]
+    if any(marker in local_part for marker in {"faculty", "staff", "alumni"}):
+        return False
+
+    batch_year = _parse_be_batch(normalized)
+    return batch_year is None or batch_year >= 2022
+
+
+def _is_auto_approved_alumni_email(email: str) -> bool:
+    normalized = _normalize_email(email)
+    return _is_thapar_email(normalized) and (_parse_be_batch(normalized) or 9999) <= 2021
+
+
+def _graduation_year_from_email(email: str) -> int | None:
+    batch_year = _parse_be_batch(email)
+    if batch_year is None:
+        return None
+    return batch_year + 4
+
+
+def _stable_google_password(provider_id: str | None, email: str) -> str:
+    digest = hashlib.sha256(f"{provider_id or ''}:{email}:google".encode("utf-8")).hexdigest()
+    return f"google-{digest}"
 
 
 def _looks_like_student_email(email: str) -> bool:
@@ -172,14 +277,15 @@ def _extract_google_identity(
     email = (fallback_email or "").strip().lower()
     name = fallback_name or None
     provider_id = None
+    avatar = None
 
     if not id_token:
-        return email, name, provider_id
+        return email, name, provider_id, avatar
 
     try:
         parts = id_token.split(".")
         if len(parts) < 2:
-            return email, name, provider_id
+            return email, name, provider_id, avatar
 
         payload_segment = parts[1]
         padding = "=" * ((4 - len(payload_segment) % 4) % 4)
@@ -194,12 +300,13 @@ def _extract_google_identity(
             name = str(claims["name"])
 
         provider_id = claims.get("sub") or provider_id
+        avatar = claims.get("picture") or avatar
     except HTTPException:
         raise
     except Exception:
-        return email, name, provider_id
+        return email, name, provider_id, avatar
 
-    return email, name, provider_id
+    return email, name, provider_id, avatar
 
 
 def _validate_password_rules(password: str) -> None:
@@ -306,18 +413,10 @@ def register(
     db.commit()
     db.refresh(user)
 
-    token = create_access_token(
-        {
-            "sub": str(user.id),
-            "email": user.email,
-            "role": user.role,
-        }
-    )
+    token_data = _issue_token_pair(user)
+    db.commit()
 
-    return {
-        "access_token": token,
-        "token_type": "bearer",
-    }
+    return token_data
 
 
 @router.get("/admin/pending")
@@ -390,7 +489,7 @@ def google_auth(
     payload: GoogleAuthRequest,
     db: Session = Depends(get_db),
 ):
-    email, name, provider_id = _extract_google_identity(
+    email, name, provider_id, avatar = _extract_google_identity(
         payload.id_token,
         payload.email,
         payload.name,
@@ -473,17 +572,11 @@ def google_auth(
             detail="Your alumni account is pending admin verification.",
         )
 
-    token = create_access_token(
-        {
-            "sub": str(user.id),
-            "email": user.email,
-            "role": user.role,
-        }
-    )
+    token_data = _issue_token_pair(user)
+    db.commit()
 
     return {
-        "access_token": token,
-        "token_type": "bearer",
+        **token_data,
         "status": "verified",
         "requires_admin_review": False,
     }
@@ -668,18 +761,10 @@ def demo_login(
     db.commit()
     db.refresh(user)
 
-    token = create_access_token(
-        {
-            "sub": str(user.id),
-            "email": user.email,
-            "role": user.role,
-        }
-    )
+    token_data = _issue_token_pair(user)
+    db.commit()
 
-    return {
-        "access_token": token,
-        "token_type": "bearer",
-    }
+    return token_data
 
 
 @router.post(
@@ -733,15 +818,7 @@ def login(
             detail="Invalid credentials",
         )
 
-    token = create_access_token(
-        {
-            "sub": str(user.id),
-            "email": user.email,
-            "role": user.role,
-        }
-    )
+    token_data = _issue_token_pair(user)
+    db.commit()
 
-    return {
-        "access_token": token,
-        "token_type": "bearer",
-    }
+    return token_data
