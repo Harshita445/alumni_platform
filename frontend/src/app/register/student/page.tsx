@@ -2,17 +2,46 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowRight, GraduationCap, Sparkles } from "lucide-react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  GraduationCap,
+  Handshake,
+  Lock,
+  Mail,
+  Shield,
+  ShieldCheck,
+  Sparkles,
+  User,
+} from "lucide-react";
+import { Playfair_Display } from "next/font/google";
 
-import { googleAuth, saveStoredUser } from "@/lib/api";
-import { isEligibleStudentEmail } from "@/lib/onboarding";
+import { googleAuth, registerUser, saveStoredUser, updateProfile, type StoredUser } from "@/lib/api";
+import { isEligibleStudentEmail, resolvePostAuthRoute } from "@/lib/onboarding";
 import { promptGoogleSignIn } from "@/lib/googleAuth";
+import { isThaparEmail } from "@/lib/auth";
+import styles from "../alumni/alumni-register.module.css";
+
+const playfair = Playfair_Display({
+  subsets: ["latin"],
+  weight: ["700"],
+  variable: "--font-alumni-register-serif",
+});
+
+const alumniCandidatePattern = /_be2[3456](?:$|_)/i;
+const usernamePattern = /^[A-Za-z0-9_]{3,20}$/;
 
 export default function StudentRegisterPage() {
   const router = useRouter();
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [isGoogleReady, setIsGoogleReady] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
   const [showEligibilityModal, setShowEligibilityModal] = useState(false);
 
   useEffect(() => {
@@ -34,6 +63,7 @@ export default function StudentRegisterPage() {
 
   const handleGoogleSubmit = async () => {
     setError(null);
+    setSuccess(null);
     setIsSubmitting(true);
 
     try {
@@ -50,7 +80,7 @@ export default function StudentRegisterPage() {
           return;
         }
 
-        router.push("/onboarding");
+        router.push(resolvePostAuthRoute(storedUser));
       });
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Google sign-in failed.");
@@ -59,54 +89,257 @@ export default function StudentRegisterPage() {
     }
   };
 
+  const validateForm = () => {
+    const normalizedEmail = email.trim().toLowerCase();
+    const localPart = normalizedEmail.split("@", 1)[0] || "";
+
+    if (fullName.trim().length < 3) {
+      return "Full name must be at least 3 characters.";
+    }
+
+    if (!isThaparEmail(normalizedEmail)) {
+      return "Students must use a Thapar university email address.";
+    }
+
+    if (alumniCandidatePattern.test(localPart)) {
+      return "This email looks like an alumni email. Please register as an alumni instead.";
+    }
+
+    if (!usernamePattern.test(username.trim())) {
+      return "Username must be 3-20 characters and use only letters, numbers, or underscores.";
+    }
+
+    if (
+      password.length < 8 ||
+      !/[A-Z]/.test(password) ||
+      !/[a-z]/.test(password) ||
+      !/\d/.test(password) ||
+      !/[!@#$%^&*(),.?":{}|<>]/.test(password)
+    ) {
+      return "Password must be at least 8 characters and include uppercase, lowercase, number, and special character.";
+    }
+
+    if (password !== confirmPassword) {
+      return "Passwords must match.";
+    }
+
+    return null;
+  };
+
+  const handleSubmit = async () => {
+    setError(null);
+    setSuccess(null);
+
+    const validationError = validateForm();
+
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const storedUser = await registerUser({
+        email: email.trim().toLowerCase(),
+        password,
+        role: "student",
+      });
+
+      await updateProfile(storedUser.access_token, {
+        full_name: fullName.trim(),
+      });
+
+      const nextUser: StoredUser = {
+        ...storedUser,
+        verification_status: "verified",
+        onboarding_step: 0,
+      };
+
+      saveStoredUser(nextUser);
+      setSuccess("Account created successfully! Please verify your email to activate your account.");
+      router.push(resolvePostAuthRoute(nextUser));
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Registration failed.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
-    <main className="auth-page">
-      <div className="auth-bg-pattern auth-bg-pattern-one" aria-hidden="true" />
-      <div className="auth-bg-pattern auth-bg-pattern-two" aria-hidden="true" />
+    <main className={`${styles.page} ${playfair.variable}`}>
+      <div className={styles.botanicalTop} aria-hidden="true" />
+      <div className={styles.botanicalBottom} aria-hidden="true" />
 
-      <section className="auth-card" style={{ maxWidth: "940px" }}>
-        <div className="auth-form-panel" style={{ padding: "40px 36px" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "10px", color: "var(--primary)", fontWeight: 700, marginBottom: "16px" }}>
-            <GraduationCap size={20} />
-            Student registration
+      <section className={styles.shell} aria-labelledby="student-register-heading">
+        <div className={styles.formSide}>
+          <div className={styles.formCard}>
+            <div className={styles.kicker}>
+              <GraduationCap size={18} strokeWidth={1.8} />
+              Student Registration
+            </div>
+
+            <h1 id="student-register-heading">
+              Start your student journey
+            </h1>
+            <p className={styles.supportingText}>
+              Join Alumly to connect with verified alumni, discover mentorship opportunities, and grow your professional network from your very first semester.
+            </p>
+
+            <div className={styles.fields}>
+              <label className={styles.inputWrap}>
+                <User size={20} strokeWidth={1.8} aria-hidden="true" />
+                <input
+                  name="name"
+                  placeholder="Full name"
+                  value={fullName}
+                  onChange={(event) => setFullName(event.target.value)}
+                  autoComplete="name"
+                />
+              </label>
+
+              <label className={styles.inputWrap}>
+                <Mail size={20} strokeWidth={1.8} aria-hidden="true" />
+                <input
+                  name="email"
+                  type="email"
+                  placeholder="you@thapar.edu"
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                  autoComplete="email"
+                />
+              </label>
+
+              <label className={styles.inputWrap}>
+                <User size={20} strokeWidth={1.8} aria-hidden="true" />
+                <input
+                  name="username"
+                  placeholder="Choose a unique username"
+                  value={username}
+                  onChange={(event) => setUsername(event.target.value)}
+                  autoComplete="username"
+                />
+              </label>
+
+              <label className={styles.inputWrap}>
+                <Lock size={20} strokeWidth={1.8} aria-hidden="true" />
+                <input
+                  name="password"
+                  type="password"
+                  placeholder="Password"
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  autoComplete="new-password"
+                />
+              </label>
+
+              <label className={styles.inputWrap}>
+                <Lock size={20} strokeWidth={1.8} aria-hidden="true" />
+                <input
+                  name="confirmPassword"
+                  type="password"
+                  placeholder="Confirm password"
+                  value={confirmPassword}
+                  onChange={(event) => setConfirmPassword(event.target.value)}
+                  autoComplete="new-password"
+                />
+              </label>
+            </div>
+
+            {error ? <p className={styles.errorText}>{error}</p> : null}
+            {success ? <p className={styles.successText}>{success}</p> : null}
+
+            <button type="button" onClick={handleSubmit} disabled={isSubmitting} className={styles.primaryButton}>
+              <span>{isSubmitting ? "Creating account..." : "Create Student Account"}</span>
+              <ArrowRight size={20} strokeWidth={1.9} aria-hidden="true" />
+            </button>
+
+            <div className={styles.separator} aria-hidden="true">
+              <span />
+              <strong>OR</strong>
+              <span />
+            </div>
+
+            <button type="button" onClick={handleGoogleSubmit} disabled={!isGoogleReady || isSubmitting} className={styles.googleButton}>
+              <span className={styles.googleLabel}>
+                <span className={styles.googleMark} aria-hidden="true">G</span>
+                Continue with Thapar Google
+              </span>
+              <ArrowRight size={18} strokeWidth={1.9} aria-hidden="true" />
+            </button>
+
+            <p className={styles.signInPrompt}>
+              Already have an account?{" "}
+              <button type="button" onClick={() => router.push("/login")}>
+                Sign in
+              </button>
+            </p>
           </div>
-
-          <h1 style={{ fontSize: "clamp(34px, 4vw, 46px)", marginBottom: "12px" }}>
-            Continue with your Thapar Account
-          </h1>
-          <p style={{ color: "var(--text-secondary)", marginBottom: "28px", maxWidth: "620px" }}>
-            Access the student mentorship experience with the same Google identity you already use for your university services.
-          </p>
-
-          <button
-            type="button"
-            onClick={handleGoogleSubmit}
-            disabled={!isGoogleReady || isSubmitting}
-            className="auth-google-button"
-            style={{ opacity: isGoogleReady && !isSubmitting ? 1 : 0.7 }}
-          >
-            <span className="google-mark" aria-hidden="true">G</span>
-            Continue with your Thapar Account
-          </button>
-
-          <p style={{ marginTop: "16px", textAlign: "center", color: "var(--text-secondary)", fontSize: "14px" }}>
-            Only currently enrolled undergraduate students with official Thapar University email addresses can register as students.
-          </p>
-
-          {error ? <p style={{ color: "var(--danger)", marginTop: "14px" }}>{error}</p> : null}
         </div>
 
-        <aside className="auth-brand-panel" aria-hidden="true" style={{ minHeight: "100%" }}>
-          <img src="/thapar-campus-hero.jpg" alt="" className="auth-campus-image" />
-          <div className="auth-brand-overlay" />
-          <div className="auth-brand-content" style={{ padding: "28px" }}>
-            <div style={{ display: "inline-flex", alignItems: "center", gap: "10px", padding: "8px 12px", borderRadius: "999px", background: "rgba(255,255,255,0.16)", marginBottom: "16px" }}>
-              <Sparkles size={16} />
-              Premium onboarding
+        <aside className={styles.brandPanel}>
+          <div className={styles.brandDots} aria-hidden="true" />
+          <div className={styles.brandContent}>
+            <div className={styles.badge}>
+              <ShieldCheck size={16} strokeWidth={1.9} aria-hidden="true" />
+              Thapar Verified
             </div>
-            <h2 style={{ fontSize: "28px", marginBottom: "10px" }}>A guided path to mentorship</h2>
-            <p>We keep your identity simple, verify your batch, and start your onboarding instantly once you are eligible.</p>
+
+            <div className={styles.crest} aria-hidden="true">
+              <GraduationCap size={26} strokeWidth={1.6} />
+            </div>
+
+            <h2>Your journey starts here</h2>
+
+            <div className={styles.brandDivider} aria-hidden="true">
+              <span />
+              <strong>*</strong>
+              <span />
+            </div>
+
+            <p className={styles.brandIntro}>
+              Use your university email or your Thapar Google account to instantly unlock mentorship, opportunities, and a trusted student community.
+            </p>
+
+            <div className={styles.featureStack}>
+              <div className={styles.featureCard}>
+                <span>
+                  <GraduationCap size={24} strokeWidth={1.9} aria-hidden="true" />
+                </span>
+                <div>
+                  <h3>Verified student</h3>
+                  <p>Only active students with a valid university email can access the platform.</p>
+                </div>
+              </div>
+
+              <div className={styles.featureCard}>
+                <span>
+                  <Handshake size={24} strokeWidth={1.9} aria-hidden="true" />
+                </span>
+                <div>
+                  <h3>Built for mentorship</h3>
+                  <p>Connect with alumni, explore guidance, and build meaningful professional relationships.</p>
+                </div>
+              </div>
+
+              <div className={styles.featureCard}>
+                <span>
+                  <Shield size={24} strokeWidth={1.9} aria-hidden="true" />
+                </span>
+                <div>
+                  <h3>Private & secure</h3>
+                  <p>Your personal information stays protected and is never shared without your permission.</p>
+                </div>
+              </div>
+            </div>
+
+            <button type="button" onClick={() => router.push("/login")} className={styles.backButton}>
+              Back to Login
+              <ArrowLeft size={18} strokeWidth={1.9} aria-hidden="true" />
+            </button>
           </div>
+
+          <div className={styles.campusLineArt} aria-hidden="true" />
         </aside>
       </section>
 

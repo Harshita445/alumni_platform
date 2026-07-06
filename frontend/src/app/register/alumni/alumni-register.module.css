@@ -210,6 +210,14 @@
   line-height: 1.55;
 }
 
+.successText {
+  margin: 16px 0 0;
+  color: #5f6f42;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.55;
+}
+
 .primaryButton,
 .googleButton,
 .backButton {

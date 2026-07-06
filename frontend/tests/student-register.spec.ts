@@ -27,12 +27,14 @@ test.describe('Student registration page', () => {
       await input.fill(`student_${suffix}@thapar.edu`);
       // Full name and password fields may have different placeholders; use common fallbacks.
       const nameLocator = page.locator('input[placeholder="Full name"], input[name="name"]');
-      const passLocator = page.locator('input[placeholder="Password"], input[name="password"], input[type="password"]');
+      const passLocator = page.locator('input[placeholder="Password"], input[name="password"]').first();
+      const confirmPassLocator = page.locator('input[placeholder="Confirm password"], input[name="confirmPassword"]').first();
 
       await nameLocator.fill('Test Student');
       await passLocator.fill('Password123!');
+      await confirmPassLocator.fill('Password123!');
 
-      await page.locator('button:not([disabled]):has-text("Continue")').first().click();
+      await page.getByRole('button', { name: /Create Student Account/i }).click();
 
       await expect(
         page.getByText('This email looks like an alumni email. Please register as an alumni instead.')
