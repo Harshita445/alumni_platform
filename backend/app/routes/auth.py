@@ -239,12 +239,14 @@ def get_me(
     current_user: User = Depends(get_current_user),
 ):
     verification_status = "pending" if current_user.is_pending_verification else "verified" if current_user.is_verified else "rejected"
+    display_name = current_user.display_name or (current_user.profile.full_name if getattr(current_user, "profile", None) else None)
 
     return {
         "id": current_user.id,
         "email": current_user.email,
         "role": current_user.role,
         "verification_status": verification_status,
+        "display_name": display_name,
     }
 
 
