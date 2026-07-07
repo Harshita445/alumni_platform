@@ -98,6 +98,7 @@ export type StoredUser = {
   profile?: UserProfile;
   verification_status?: "verified" | "pending" | "rejected";
   onboarding_step?: number;
+  is_demo?: boolean;
 };
 
 export function getStoredUser(): StoredUser | null {

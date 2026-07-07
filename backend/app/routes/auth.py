@@ -353,6 +353,7 @@ def get_me(
         "verification_status": verification_status,
         "display_name": display_name,
         "onboarding_step": 5 if current_user.onboarding_completed else 0,
+        "is_demo": bool(current_user.is_demo),
     }
 
 

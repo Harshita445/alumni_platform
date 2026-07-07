@@ -33,7 +33,7 @@ from app.routes.notifications import router as notifications_router
 from app.routes.mentorship_services import router as mentorship_services_router
 from app.routes.payments import router as payments_router
 from app.routes.uploads import router as uploads_router
-from app.routes.dev import router as dev_router
+from app.routes.dev import demo_router, router as dev_router
 
 
 logger = logging.getLogger("alumly")
@@ -126,4 +126,5 @@ app.include_router(mentorship_services_router)
 app.include_router(payments_router)
 app.include_router(uploads_router)
 app.include_router(dev_router)
+app.include_router(demo_router)
 

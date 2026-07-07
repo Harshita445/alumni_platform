@@ -30,6 +30,28 @@ def create_payment(payload: PaymentCreateInput, db: Session = Depends(get_db), c
     if booking.status not in ("approved", "awaiting_payment"):
         raise HTTPException(status_code=400, detail="Booking is not ready for payment")
 
+    if current_user.is_demo:
+        booking.status = BookingStatus.PAID.value
+        booking.status_history = (booking.status_history or []) + [{
+            "status": BookingStatus.PAID.value,
+            "changed_at": datetime.utcnow().isoformat(),
+            "note": "Demo payment completed",
+        }]
+        db.commit()
+        db.refresh(booking)
+        return {
+            "id": booking.id,
+            "booking_id": booking.id,
+            "student_id": booking.student_id,
+            "mentor_id": booking.alumni_id,
+            "gross_amount": Decimal("0"),
+            "platform_fee": Decimal("0"),
+            "mentor_amount": Decimal("0"),
+            "currency": "INR",
+            "status": "PAID",
+            "message": "Payment Successful. Demo transaction completed.",
+        }
+
     payout_settings = db.query(MentorPayoutSettings).filter(MentorPayoutSettings.mentor_id == booking.alumni_id).first()
     if payout_settings is None:
         raise HTTPException(status_code=400, detail="Mentor payout details are not configured")
@@ -105,6 +127,20 @@ def mark_payment_paid(payment_id: int, db: Session = Depends(get_db), current_us
         raise HTTPException(status_code=404, detail="Associated booking not found")
     if booking.status != BookingStatus.AWAITING_PAYMENT.value:
         raise HTTPException(status_code=400, detail="Booking is not awaiting payment")
+
+    if current_user.is_demo:
+        payment.status = "PAID"
+        payment.updated_at = datetime.utcnow()
+        booking.status = BookingStatus.PAID.value
+        booking.status_history = (booking.status_history or []) + [{
+            "status": BookingStatus.PAID.value,
+            "changed_at": datetime.utcnow().isoformat(),
+            "note": "Demo payment completed",
+        }]
+        db.commit()
+        db.refresh(payment)
+        db.refresh(booking)
+        return {**payment.__dict__, "message": "Payment Successful. Demo transaction completed."}
 
     payment.status = payment_service.markPaid({"status": payment.status})["status"]
     payment.updated_at = datetime.utcnow()
@@ -200,6 +236,12 @@ def schedule_payout(payment_id: int, db: Session = Depends(get_db), current_user
         raise HTTPException(status_code=404, detail="Payment not found")
     if payment.mentor_id != current_user.id:
         raise HTTPException(status_code=403, detail="Only the mentor can schedule payout")
+
+    if current_user.is_demo:
+        payment.status = PaymentStatus.PAID_OUT.value
+        payment.updated_at = datetime.utcnow()
+        db.commit()
+        return {"message": "Demo payout simulated.", "status": payment.status}
 
     payout = Payout(
         mentor_id=current_user.id,

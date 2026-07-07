@@ -30,6 +30,13 @@ def upload_profile_picture(
     if current_user.role not in {UserRole.STUDENT.value, UserRole.ALUMNI.value}:
         raise HTTPException(status_code=403, detail="Unsupported user role")
 
+    if current_user.is_demo:
+        return {
+            "message": "Profile picture upload simulated.",
+            "url": "https://res.cloudinary.com/demo/image/upload/v1/demo-profile.png",
+            "public_id": "demo-profile-picture",
+        }
+
     profile = _get_or_create_profile(db, current_user)
     previous_public_id = profile.profile_picture_public_id
 
@@ -64,6 +71,13 @@ def upload_resume(
 ):
     if current_user.role not in {UserRole.STUDENT.value, UserRole.ALUMNI.value}:
         raise HTTPException(status_code=403, detail="Unsupported user role")
+
+    if current_user.is_demo:
+        return {
+            "message": "Resume upload simulated.",
+            "url": "https://res.cloudinary.com/demo/raw/upload/v1/demo-resume.pdf",
+            "public_id": "demo-resume",
+        }
 
     profile = _get_or_create_profile(db, current_user)
     previous_public_id = profile.resume_public_id

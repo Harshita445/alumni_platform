@@ -22,9 +22,9 @@ export default function LoginPage() {
 
   const demoFlag = process.env.NEXT_PUBLIC_ENABLE_DEMO_LOGIN ?? process.env.ENABLE_DEMO_LOGIN;
   const isDemoLoginEnabled =
-    process.env.NODE_ENV !== "production" &&
-    demoFlag !== "false" &&
-    (process.env.NODE_ENV === "development" || demoFlag === "true");
+    typeof demoFlag === "boolean"
+      ? demoFlag
+      : String(demoFlag ?? "").toLowerCase() === "true";
 
   useEffect(() => {
     if (user) {
@@ -247,16 +247,6 @@ export default function LoginPage() {
                     Continue as Demo Alumni
                   </button>
 
-                  <button
-                    type="button"
-                    onClick={handleDemoReset}
-                    disabled={isResettingDemo || isSubmitting}
-                    className="auth-demo-button"
-                    style={{ ...demoResetButtonStyle, opacity: isResettingDemo || isSubmitting ? 0.7 : 1 }}
-                  >
-                    <RotateCcw size={17} aria-hidden="true" />
-                    {isResettingDemo ? "Resetting demo data..." : "Reset Demo Data"}
-                  </button>
                 </div>
               </>
             ) : null}

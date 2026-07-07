@@ -8,7 +8,9 @@ import { useAuth } from "@/hooks/useAuth";
 export default function Navbar() {
   const router = useRouter();
   const { user, logout } = useAuth();
-  const isDemoUser = Boolean(user?.email?.endsWith("@alumly.local"));
+  const isDemoUser = Boolean(
+    user?.is_demo || user?.email?.endsWith("@alumly.local") || user?.email?.endsWith("@alumly.demo")
+  );
 
   const handleLogout = () => {
     logout();
@@ -103,6 +105,7 @@ export default function Navbar() {
               </span>
               {isDemoUser ? (
                 <span
+                  title="You are exploring a demonstration account. Changes made in Demo Mode may be reset and some actions are intentionally disabled."
                   style={{
                     border: "1px solid rgba(106, 68, 48, 0.22)",
                     borderRadius: "999px",
@@ -111,6 +114,7 @@ export default function Navbar() {
                     padding: "6px 10px",
                     fontSize: "13px",
                     fontWeight: 800,
+                    cursor: "help",
                   }}
                 >
                   Demo Mode

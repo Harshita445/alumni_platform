@@ -50,11 +50,11 @@ class Settings(BaseSettings):
 
     @property
     def demo_login_enabled(self) -> bool:
-        if self.NODE_ENV.lower() == "production":
+        if self.ENABLE_DEMO_LOGIN is None:
             return False
-        if self.ENABLE_DEMO_LOGIN is not None:
+        if isinstance(self.ENABLE_DEMO_LOGIN, bool):
             return self.ENABLE_DEMO_LOGIN
-        return self.NODE_ENV.lower() == "development"
+        return str(self.ENABLE_DEMO_LOGIN).strip().lower() in {"1", "true", "yes", "on"}
 
 
 settings = Settings()

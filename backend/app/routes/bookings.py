@@ -230,6 +230,13 @@ def update_booking_status(
         )
 
     if requested_status == BookingStatus.APPROVED:
+        if current_user.is_demo:
+            booking.status = BookingStatus.APPROVED.value
+            _append_status_history(booking, BookingStatus.APPROVED, "Demo booking approved")
+            _create_notification(db, user_id=booking.student_id, booking_id=booking.id, message="Demo booking approved.")
+            db.commit()
+            db.refresh(booking)
+            return booking
         if current_user.id != booking.alumni_id:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
@@ -296,6 +303,15 @@ def update_booking_status(
         )
 
     elif requested_status == BookingStatus.CONFIRMED:
+        if current_user.is_demo:
+            booking.status = BookingStatus.CONFIRMED.value
+            booking.meeting_link = "https://meet.google.com/demo-session"
+            _append_status_history(booking, BookingStatus.CONFIRMED, "Demo booking confirmed")
+            _create_notification(db, user_id=booking.student_id, booking_id=booking.id, message="Booking confirmed (Demo)")
+            db.commit()
+            db.refresh(booking)
+            return booking
+
         if current_user.id != booking.alumni_id:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,

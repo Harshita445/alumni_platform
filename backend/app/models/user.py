@@ -54,6 +54,8 @@ class User(Base):
 
     is_pending_verification = Column(Boolean, default=False)
 
+    is_demo = Column(Boolean, default=False)
+
     created_at = Column(
         DateTime(timezone=True),
         server_default=func.now(),

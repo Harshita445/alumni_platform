@@ -212,7 +212,7 @@ def test_dev_demo_student_login_creates_session_with_seed_data():
         db.close()
 
 
-def test_dev_demo_endpoints_are_disabled_in_production():
+def test_dev_demo_endpoints_are_available_when_enabled_in_production():
     original_node_env = dev_routes.settings.NODE_ENV
     original_enable_demo_login = dev_routes.settings.ENABLE_DEMO_LOGIN
     try:
@@ -223,8 +223,8 @@ def test_dev_demo_endpoints_are_disabled_in_production():
         alumni_response = client.post("/api/dev/login/alumni")
         reset_response = client.post("/api/dev/reset-demo-data")
 
-        assert student_response.status_code == 403
-        assert alumni_response.status_code == 403
+        assert student_response.status_code == 200
+        assert alumni_response.status_code == 200
         assert reset_response.status_code == 403
     finally:
         dev_routes.settings.NODE_ENV = original_node_env

@@ -1,13 +1,15 @@
+import os
 from datetime import date, datetime, time, timedelta, timezone
 from decimal import Decimal
+from threading import Timer
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, Header, HTTPException
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
 from app.core.security import create_access_token, create_refresh_token, hash_password, hash_refresh_token
-from app.database import get_db
+from app.database import SessionLocal, get_db
 from app.models.availability import Availability
 from app.models.booking import Booking, BookingStatus
 from app.models.mentorship_service import MentorshipService
@@ -20,9 +22,10 @@ from app.models.user import User
 from app.services.community_service import _POSTS
 
 router = APIRouter(prefix="/api/dev", tags=["Development"])
+demo_router = APIRouter(prefix="/api/demo", tags=["Demo"])
 
-DEMO_STUDENT_EMAIL = "demo.student@alumly.local"
-DEMO_ALUMNI_EMAIL = "demo.alumni@alumly.local"
+DEMO_STUDENT_EMAIL = "student-demo@alumly.demo"
+DEMO_ALUMNI_EMAIL = "alumni-demo@alumly.demo"
 
 ALUMNI_SEED = [
     ("Rahul Sharma", DEMO_ALUMNI_EMAIL, "Google", "Senior Software Engineer", 2019, ["System Design", "Backend", "Career Guidance"]),
@@ -53,6 +56,13 @@ def _require_demo_mode() -> None:
         raise HTTPException(status_code=403, detail="Demo login is disabled.")
 
 
+def _require_admin_access(admin_key: str | None) -> None:
+    if not settings.ADMIN_API_KEY:
+        raise HTTPException(status_code=500, detail="Admin verification is not configured")
+    if admin_key != settings.ADMIN_API_KEY:
+        raise HTTPException(status_code=403, detail="Admin access required")
+
+
 def _issue_token_pair(user: User) -> dict[str, str]:
     access_token = create_access_token({"sub": str(user.id), "email": user.email, "role": user.role})
     refresh_token = create_refresh_token()
@@ -70,6 +80,7 @@ def _user_payload(user: User) -> dict:
         "display_name": user.display_name,
         "verification_status": "verified" if user.is_verified else "pending",
         "onboarding_step": 5 if user.onboarding_completed else 0,
+        "is_demo": bool(user.is_demo),
     }
 
 
@@ -84,6 +95,7 @@ def _upsert_user(db: Session, email: str, role: str, name: str) -> User:
     user.display_name = name
     user.auth_provider = "demo"
     user.is_verified = True
+    user.is_demo = True
     user.is_pending_verification = False
     user.verification_status = "approved"
     user.onboarding_completed = True
@@ -330,6 +342,30 @@ def seed_demo_data(db: Session) -> dict[str, User]:
     return {"student": student, "alumni": rahul}
 
 
+def _schedule_demo_reset() -> None:
+    if os.getenv("PYTEST_CURRENT_TEST") or str(settings.NODE_ENV).lower() == "test":
+        return
+
+    timer = Timer(60 * 60 * 6, _run_demo_reset_job)
+    timer.daemon = True
+    timer.start()
+
+
+def _run_demo_reset_job() -> None:
+    try:
+        db = SessionLocal()
+        seed_demo_data(db)
+        db.commit()
+        db.close()
+    except Exception:
+        pass
+    finally:
+        _schedule_demo_reset()
+
+
+_schedule_demo_reset()
+
+
 def _login_as(role: str, db: Session):
     _require_demo_mode()
     users = seed_demo_data(db)
@@ -349,8 +385,24 @@ def login_demo_alumni(db: Session = Depends(get_db)):
     return _login_as("alumni", db)
 
 
-@router.post("/reset-demo-data")
-def reset_demo_data(db: Session = Depends(get_db)):
+def _reset_demo_data(admin_key: str | None, db: Session) -> dict:
     _require_demo_mode()
+    _require_admin_access(admin_key)
     users = seed_demo_data(db)
     return {"message": "Demo data reset.", "student": _user_payload(users["student"]), "alumni": _user_payload(users["alumni"])}
+
+
+@router.post("/reset-demo-data")
+def reset_demo_data(
+    admin_key: str | None = Header(default=None, alias="X-Admin-Key"),
+    db: Session = Depends(get_db),
+):
+    return _reset_demo_data(admin_key, db)
+
+
+@demo_router.post("/reset")
+def reset_demo_data_alias(
+    admin_key: str | None = Header(default=None, alias="X-Admin-Key"),
+    db: Session = Depends(get_db),
+):
+    return _reset_demo_data(admin_key, db)

@@ -161,6 +161,8 @@ def ensure_schema() -> None:
                 connection.execute(text("ALTER TABLE users ADD COLUMN approved_at DATETIME"))
             if "verification_reason" not in existing_columns:
                 connection.execute(text("ALTER TABLE users ADD COLUMN verification_reason TEXT"))
+            if "is_demo" not in existing_columns:
+                connection.execute(text("ALTER TABLE users ADD COLUMN is_demo BOOLEAN DEFAULT 0"))
 
         if "profiles" in table_names:
             existing_profile_columns = {column["name"] for column in inspector.get_columns("profiles")}
