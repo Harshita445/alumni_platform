@@ -4,7 +4,7 @@ import json
 import re
 import smtplib
 import time
-from datetime import date, datetime, time, timedelta, timezone
+from datetime import datetime, timedelta, timezone
 from email.message import EmailMessage
 from jose import jwt, JWTError
 import os
@@ -27,8 +27,6 @@ from app.core.security import (
 )
 from app.database import get_db
 from app.dependencies.auth import get_current_user
-from app.models.booking import Booking, BookingStatus
-from app.models.payments import MentorPayoutSettings
 from app.models.profile import Profile
 from app.models.user import User
 
@@ -354,6 +352,7 @@ def get_me(
         "role": current_user.role,
         "verification_status": verification_status,
         "display_name": display_name,
+        "onboarding_step": 5 if current_user.onboarding_completed else 0,
     }
 
 
@@ -648,123 +647,6 @@ def password_reset_confirm(
     db.commit()
 
     return {"message": "Password updated"}
-
-
-class DemoLoginRequest(BaseModel):
-    role: str
-
-
-@router.post(
-    "/demo-login",
-    response_model=TokenResponse,
-)
-def demo_login(
-    payload: DemoLoginRequest,
-    db: Session = Depends(get_db),
-):
-    role = payload.role.lower()
-    if role not in {"student", "alumni"}:
-        raise HTTPException(status_code=400, detail="Role must be either student or alumni")
-
-    demo_email = "demo-student@example.com" if role == "student" else "demo-alumni@example.com"
-    user = _get_user_by_email(db, demo_email)
-
-    if user is None:
-        user = User(
-            email=demo_email,
-            hashed_password=hash_password("DemoPass123!"),
-            role=role,
-            auth_provider="email",
-            display_name="Demo User",
-            is_verified=True,
-            is_pending_verification=False,
-        )
-        db.add(user)
-        db.flush()
-
-    user.hashed_password = hash_password("DemoPass123!")
-    user.is_verified = True
-    user.is_pending_verification = False
-    user.display_name = "Demo User"
-
-    if role == "student":
-        alumni = (
-            db.query(User)
-            .filter(User.email == "demo-alumni@example.com")
-            .first()
-        )
-        if alumni is None:
-            alumni = User(
-                email="demo-alumni@example.com",
-                hashed_password=hash_password("DemoPass123!"),
-                role="alumni",
-                auth_provider="email",
-                display_name="Demo Alumni",
-                is_verified=True,
-                is_pending_verification=False,
-            )
-            db.add(alumni)
-            db.flush()
-
-            profile = (
-                db.query(Profile)
-                .filter(Profile.user_id == alumni.id)
-                .first()
-            )
-            if profile is None:
-                db.add(
-                    Profile(
-                        user_id=alumni.id,
-                        full_name="Demo Alumni",
-                        company="Demo Company",
-                        designation="Engineering Lead",
-                        branch="CSE",
-                        graduation_year=2020,
-                        bio="Demo alumni profile for local payment testing.",
-                    )
-                )
-
-            existing_payout_settings = (
-                db.query(MentorPayoutSettings)
-                .filter(MentorPayoutSettings.mentor_id == alumni.id)
-                .first()
-            )
-            if existing_payout_settings is None:
-                db.add(
-                    MentorPayoutSettings(
-                        mentor_id=alumni.id,
-                        method="UPI",
-                        upi_id="demo-alumni@upi",
-                        account_holder="Demo Alumni",
-                        verified="verified",
-                    )
-                )
-
-        existing_booking = (
-            db.query(Booking)
-            .filter(Booking.student_id == user.id)
-            .filter(Booking.alumni_id == alumni.id)
-            .first()
-        )
-        if existing_booking is None:
-            db.add(
-                Booking(
-                    student_id=user.id,
-                    alumni_id=alumni.id,
-                    session_type="Mock Mentorship",
-                    date=date.today() + timedelta(days=2),
-                    time=time(18, 0),
-                    status=BookingStatus.APPROVED.value,
-                )
-            )
-
-    db.commit()
-    db.refresh(user)
-
-    token_data = _issue_token_pair(user)
-    db.commit()
-
-    return token_data
 
 
 @router.post(

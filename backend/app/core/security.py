@@ -1,3 +1,4 @@
+import secrets
 from datetime import datetime, timedelta
 
 from jose import jwt
@@ -45,3 +46,21 @@ def create_access_token(
         settings.signing_secret,
         algorithm=settings.ALGORITHM,
     )
+
+
+def create_refresh_token() -> str:
+    return secrets.token_urlsafe(48)
+
+
+def hash_refresh_token(token: str) -> str:
+    return pwd_context.hash(token)
+
+
+def verify_refresh_token(
+    token: str,
+    token_hash: str | None,
+) -> bool:
+    if not token_hash:
+        return False
+
+    return pwd_context.verify(token, token_hash)

@@ -286,12 +286,8 @@ export async function loginUser(
 }
 
 export async function demoLogin(role: "student" | "alumni") {
-  const response = await fetch(`${API_BASE}/auth/demo-login`, {
+  const response = await fetch(`${API_BASE}/api/dev/login/${role}`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ role }),
   });
 
   if (!response.ok) {
@@ -326,6 +322,12 @@ export async function demoLogin(role: "student" | "alumni") {
   saveStoredUser(storedUser);
 
   return storedUser;
+}
+
+export async function resetDemoData() {
+  return request("/api/dev/reset-demo-data", {
+    method: "POST",
+  });
 }
 
 export async function fetchMe(

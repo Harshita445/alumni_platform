@@ -1,6 +1,6 @@
 from enum import Enum
 
-from sqlalchemy import Boolean, Column, Integer, String, DateTime
+from sqlalchemy import Boolean, Column, Integer, String, DateTime, Text
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 
@@ -18,7 +18,7 @@ class User(Base):
 
     email = Column(String, unique=True, nullable=False, index=True)
 
-    hashed_password = Column(String, nullable=False)
+    hashed_password = Column(String, nullable=True)
 
     role = Column(String, nullable=False)
 
@@ -27,6 +27,28 @@ class User(Base):
     provider_id = Column(String, nullable=True)
 
     display_name = Column(String, nullable=True)
+
+    avatar = Column(String, nullable=True)
+
+    refresh_token_hash = Column(String, nullable=True)
+
+    last_login = Column(DateTime(timezone=True), nullable=True)
+
+    updated_at = Column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+    )
+
+    onboarding_completed = Column(Boolean, default=False)
+
+    verification_status = Column(String, default="approved")
+
+    approved_by = Column(Integer, nullable=True)
+
+    approved_at = Column(DateTime(timezone=True), nullable=True)
+
+    verification_reason = Column(Text, nullable=True)
 
     is_verified = Column(Boolean, default=False)
 

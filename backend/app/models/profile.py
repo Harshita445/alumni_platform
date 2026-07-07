@@ -27,6 +27,12 @@ class Profile(Base):
 
     designation = Column(String, nullable=True)
 
+    degree = Column(String, nullable=True)
+
+    department = Column(String, nullable=True)
+
+    phone_number = Column(String, nullable=True)
+
     bio = Column(Text, nullable=True)
 
     linkedin_url = Column(String, nullable=True)

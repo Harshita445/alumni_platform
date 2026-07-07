@@ -953,6 +953,15 @@ img {
     0 8px 18px rgba(0,0,0,.06);
 }
 
+.auth-demo-button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 22px rgba(70, 45, 25, 0.1);
+}
+
+.auth-demo-button:disabled {
+  cursor: not-allowed;
+}
+
 .google-mark {
   font-weight: 700;
   color: #4285f4;

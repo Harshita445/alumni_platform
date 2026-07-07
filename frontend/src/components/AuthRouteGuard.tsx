@@ -19,6 +19,8 @@ const PUBLIC_PATHS = [
 ];
 const PUBLIC_PREFIXES = ["/profile/"];
 const VERIFICATION_PREFIXES = ["/verification/pending", "/verification/rejected"];
+const STUDENT_ONLY_PREFIXES = ["/saved", "/payment"];
+const ALUMNI_ONLY_PREFIXES = ["/admin"];
 
 export default function AuthRouteGuard({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -54,6 +56,22 @@ export default function AuthRouteGuard({ children }: { children: React.ReactNode
 
     if (user.role === "alumni" && user.verification_status === "rejected" && pathname !== "/verification/rejected") {
       router.replace("/verification/rejected");
+      return;
+    }
+
+    if (
+      user.role === "student" &&
+      ALUMNI_ONLY_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`))
+    ) {
+      router.replace("/403");
+      return;
+    }
+
+    if (
+      user.role === "alumni" &&
+      STUDENT_ONLY_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`))
+    ) {
+      router.replace("/403");
       return;
     }
 

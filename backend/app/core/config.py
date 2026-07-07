@@ -10,7 +10,8 @@ class Settings(BaseSettings):
     )
     JWT_SECRET: str = ""
     ALGORITHM: str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 15
+    REFRESH_TOKEN_EXPIRE_DAYS: int = 7
 
     PASSWORD_MIN_LENGTH: int = 8
     PASSWORD_REQUIRE_UPPERCASE: bool = True
@@ -33,6 +34,8 @@ class Settings(BaseSettings):
     SMTP_USERNAME: str = ""
     SMTP_PASSWORD: str = ""
     SMTP_FROM_EMAIL: str = ""
+    NODE_ENV: str = "development"
+    ENABLE_DEMO_LOGIN: bool | None = None
 
     @property
     def signing_secret(self) -> str:
@@ -44,6 +47,14 @@ class Settings(BaseSettings):
         if self.FRONTEND_URL:
             origins.append(self.FRONTEND_URL)
         return list(dict.fromkeys(origins))
+
+    @property
+    def demo_login_enabled(self) -> bool:
+        if self.NODE_ENV.lower() == "production":
+            return False
+        if self.ENABLE_DEMO_LOGIN is not None:
+            return self.ENABLE_DEMO_LOGIN
+        return self.NODE_ENV.lower() == "development"
 
 
 settings = Settings()

@@ -143,6 +143,24 @@ def ensure_schema() -> None:
                 connection.execute(
                     text("ALTER TABLE users ADD COLUMN is_pending_verification BOOLEAN DEFAULT 0")
                 )
+            if "avatar" not in existing_columns:
+                connection.execute(text("ALTER TABLE users ADD COLUMN avatar VARCHAR"))
+            if "refresh_token_hash" not in existing_columns:
+                connection.execute(text("ALTER TABLE users ADD COLUMN refresh_token_hash VARCHAR"))
+            if "last_login" not in existing_columns:
+                connection.execute(text("ALTER TABLE users ADD COLUMN last_login DATETIME"))
+            if "updated_at" not in existing_columns:
+                connection.execute(text("ALTER TABLE users ADD COLUMN updated_at DATETIME"))
+            if "onboarding_completed" not in existing_columns:
+                connection.execute(text("ALTER TABLE users ADD COLUMN onboarding_completed BOOLEAN DEFAULT 0"))
+            if "verification_status" not in existing_columns:
+                connection.execute(text("ALTER TABLE users ADD COLUMN verification_status VARCHAR DEFAULT 'approved'"))
+            if "approved_by" not in existing_columns:
+                connection.execute(text("ALTER TABLE users ADD COLUMN approved_by INTEGER"))
+            if "approved_at" not in existing_columns:
+                connection.execute(text("ALTER TABLE users ADD COLUMN approved_at DATETIME"))
+            if "verification_reason" not in existing_columns:
+                connection.execute(text("ALTER TABLE users ADD COLUMN verification_reason TEXT"))
 
         if "profiles" in table_names:
             existing_profile_columns = {column["name"] for column in inspector.get_columns("profiles")}
@@ -168,6 +186,12 @@ def ensure_schema() -> None:
                 connection.execute(text("ALTER TABLE profiles ADD COLUMN resume_url VARCHAR"))
             if "resume_public_id" not in existing_profile_columns:
                 connection.execute(text("ALTER TABLE profiles ADD COLUMN resume_public_id VARCHAR"))
+            if "degree" not in existing_profile_columns:
+                connection.execute(text("ALTER TABLE profiles ADD COLUMN degree VARCHAR"))
+            if "department" not in existing_profile_columns:
+                connection.execute(text("ALTER TABLE profiles ADD COLUMN department VARCHAR"))
+            if "phone_number" not in existing_profile_columns:
+                connection.execute(text("ALTER TABLE profiles ADD COLUMN phone_number VARCHAR"))
 
         if "bookings" in table_names:
             existing_booking_columns = {column["name"] for column in inspector.get_columns("bookings")}

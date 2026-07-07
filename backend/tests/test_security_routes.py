@@ -19,6 +19,7 @@ from app.models.notification import Notification
 from app.models.profile import Profile
 from app.models.user import User
 from app.routes import auth as auth_routes
+from app.routes import dev as dev_routes
 from app.core.security import hash_password
 
 client = TestClient(app)
@@ -182,34 +183,52 @@ def test_login_rejects_student_email_patterns_with_student_message():
     assert "student" in response.json()["detail"].lower()
 
 
-def test_demo_login_creates_a_student_session_with_booking():
+def test_dev_demo_student_login_creates_session_with_seed_data():
     db = SessionLocal()
+    original_node_env = dev_routes.settings.NODE_ENV
+    original_enable_demo_login = dev_routes.settings.ENABLE_DEMO_LOGIN
     try:
-        email = "demo-student@example.com"
-        db.query(Booking).filter(Booking.student_id == db.query(User.id).filter(User.email == email).scalar()).delete(synchronize_session=False)
-        db.query(User).filter(User.email == email).delete()
-        db.commit()
+        dev_routes.settings.NODE_ENV = "development"
+        dev_routes.settings.ENABLE_DEMO_LOGIN = True
 
-        response = client.post(
-            "/auth/demo-login",
-            json={"role": "student"},
-        )
+        response = client.post("/api/dev/login/student")
 
         assert response.status_code == 200
         assert response.json()["access_token"]
+        assert response.json()["role"] == "student"
+        assert response.json()["user"]["display_name"] == "Harshita Kumar"
 
-        user = db.query(User).filter(User.email == email).first()
+        user = db.query(User).filter(User.email == dev_routes.DEMO_STUDENT_EMAIL).first()
         assert user is not None
         assert user.is_verified is True
 
         booking = db.query(Booking).filter(Booking.student_id == user.id).first()
         assert booking is not None
-        assert booking.status == BookingStatus.APPROVED.value
+        assert booking.status in {BookingStatus.CONFIRMED.value, BookingStatus.PENDING.value, BookingStatus.COMPLETED.value}
     finally:
-        db.query(Booking).filter(Booking.student_id == db.query(User.id).filter(User.email == "demo-student@example.com").scalar()).delete(synchronize_session=False)
-        db.query(User).filter(User.email == "demo-student@example.com").delete()
+        dev_routes.settings.NODE_ENV = original_node_env
+        dev_routes.settings.ENABLE_DEMO_LOGIN = original_enable_demo_login
         db.commit()
         db.close()
+
+
+def test_dev_demo_endpoints_are_disabled_in_production():
+    original_node_env = dev_routes.settings.NODE_ENV
+    original_enable_demo_login = dev_routes.settings.ENABLE_DEMO_LOGIN
+    try:
+        dev_routes.settings.NODE_ENV = "production"
+        dev_routes.settings.ENABLE_DEMO_LOGIN = True
+
+        student_response = client.post("/api/dev/login/student")
+        alumni_response = client.post("/api/dev/login/alumni")
+        reset_response = client.post("/api/dev/reset-demo-data")
+
+        assert student_response.status_code == 403
+        assert alumni_response.status_code == 403
+        assert reset_response.status_code == 403
+    finally:
+        dev_routes.settings.NODE_ENV = original_node_env
+        dev_routes.settings.ENABLE_DEMO_LOGIN = original_enable_demo_login
 
 
 def test_get_alumni_is_publicly_accessible():

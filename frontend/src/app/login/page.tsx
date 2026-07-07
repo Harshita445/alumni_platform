@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { LockKeyhole, Mail } from "lucide-react";
+import { Briefcase, GraduationCap, LockKeyhole, Mail, RotateCcw } from "lucide-react";
 
-import { demoLogin, googleAuth, loginUser } from "@/lib/api";
+import { demoLogin, googleAuth, loginUser, resetDemoData } from "@/lib/api";
 import { useAuth } from "@/hooks/useAuth";
 import { promptGoogleSignIn } from "@/lib/googleAuth";
 import { resolvePostAuthRoute } from "@/lib/onboarding";
@@ -17,7 +17,14 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isResettingDemo, setIsResettingDemo] = useState(false);
   const [isGoogleReady, setIsGoogleReady] = useState(false);
+
+  const demoFlag = process.env.NEXT_PUBLIC_ENABLE_DEMO_LOGIN ?? process.env.ENABLE_DEMO_LOGIN;
+  const isDemoLoginEnabled =
+    process.env.NODE_ENV !== "production" &&
+    demoFlag !== "false" &&
+    (process.env.NODE_ENV === "development" || demoFlag === "true");
 
   useEffect(() => {
     if (user) {
@@ -119,6 +126,23 @@ export default function LoginPage() {
     }
   };
 
+  const handleDemoReset = async () => {
+    setError(null);
+    setIsResettingDemo(true);
+
+    try {
+      await resetDemoData();
+    } catch (err: unknown) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Demo data reset failed."
+      );
+    } finally {
+      setIsResettingDemo(false);
+    }
+  };
+
   return (
     <main className="auth-page login-page">
       <div className="auth-bg-pattern auth-bg-pattern-one" aria-hidden="true" />
@@ -192,6 +216,51 @@ export default function LoginPage() {
               {isSubmitting ? "Logging in..." : "Login"}
             </button>
 
+            {isDemoLoginEnabled ? (
+              <>
+                <div className="auth-separator" aria-hidden="true">
+                  <span />
+                  <strong>or</strong>
+                  <span />
+                </div>
+
+                <div style={{ display: "grid", gap: "14px" }}>
+                  <button
+                    type="button"
+                    onClick={() => handleDemoLogin("student")}
+                    disabled={isSubmitting}
+                    className="auth-demo-button"
+                    style={{ ...demoButtonStyle, opacity: isSubmitting ? 0.7 : 1 }}
+                  >
+                    <GraduationCap size={19} aria-hidden="true" />
+                    Continue as Demo Student
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => handleDemoLogin("alumni")}
+                    disabled={isSubmitting}
+                    className="auth-demo-button"
+                    style={{ ...demoButtonStyle, opacity: isSubmitting ? 0.7 : 1 }}
+                  >
+                    <Briefcase size={19} aria-hidden="true" />
+                    Continue as Demo Alumni
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleDemoReset}
+                    disabled={isResettingDemo || isSubmitting}
+                    className="auth-demo-button"
+                    style={{ ...demoResetButtonStyle, opacity: isResettingDemo || isSubmitting ? 0.7 : 1 }}
+                  >
+                    <RotateCcw size={17} aria-hidden="true" />
+                    {isResettingDemo ? "Resetting demo data..." : "Reset Demo Data"}
+                  </button>
+                </div>
+              </>
+            ) : null}
+
             <div className="auth-separator" aria-hidden="true">
               <span />
               <strong>or</strong>
@@ -199,25 +268,6 @@ export default function LoginPage() {
             </div>
 
             <div style={{ display: "grid", gap: "14px" }}>
-              <button
-                type="button"
-                onClick={() => handleDemoLogin("student")}
-                disabled={isSubmitting}
-                className="auth-google-button"
-                style={{ opacity: isSubmitting ? 0.7 : 1 }}
-              >
-                Demo sign in as student
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleDemoLogin("alumni")}
-                disabled={isSubmitting}
-                className="auth-google-button"
-                style={{ opacity: isSubmitting ? 0.7 : 1 }}
-              >
-                Demo sign in as alumni
-              </button>
 
               <button
                 type="button"
@@ -270,4 +320,31 @@ const errorStyle = {
   margin: 0,
   fontSize: "14px",
   fontWeight: 600,
+};
+
+const demoButtonStyle = {
+  minHeight: "56px",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: "10px",
+  border: "1px solid #8a5a3b",
+  borderRadius: "16px",
+  background: "#fbf7f2",
+  color: "#6f4328",
+  fontSize: "16px",
+  fontWeight: 700,
+  cursor: "pointer",
+  boxShadow: "0 8px 18px rgba(70, 45, 25, 0.05)",
+  transition: "transform .25s ease, box-shadow .25s ease",
+};
+
+const demoResetButtonStyle = {
+  ...demoButtonStyle,
+  minHeight: "48px",
+  borderColor: "#d8c6b7",
+  color: "#7f7067",
+  fontSize: "14px",
+  fontWeight: 600,
+  boxShadow: "none",
 };

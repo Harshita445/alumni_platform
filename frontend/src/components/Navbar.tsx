@@ -8,6 +8,7 @@ import { useAuth } from "@/hooks/useAuth";
 export default function Navbar() {
   const router = useRouter();
   const { user, logout } = useAuth();
+  const isDemoUser = Boolean(user?.email?.endsWith("@alumly.local"));
 
   const handleLogout = () => {
     logout();
@@ -100,6 +101,21 @@ export default function Navbar() {
               >
                 {user.profile?.full_name || user.email}
               </span>
+              {isDemoUser ? (
+                <span
+                  style={{
+                    border: "1px solid rgba(106, 68, 48, 0.22)",
+                    borderRadius: "999px",
+                    background: "rgba(219, 197, 173, 0.62)",
+                    color: "var(--primary)",
+                    padding: "6px 10px",
+                    fontSize: "13px",
+                    fontWeight: 800,
+                  }}
+                >
+                  Demo Mode
+                </span>
+              ) : null}
               <button
                 onClick={handleLogout}
                 style={{
