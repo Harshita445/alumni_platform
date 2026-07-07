@@ -143,6 +143,12 @@ export default function LoginPage() {
     }
   };
 
+  const fillDemoCredentials = (role: "student" | "alumni") => {
+    setError(null);
+    setEmail(role === "student" ? "student-demo@alumly.demo" : "alumni-demo@alumly.demo");
+    setPassword(role === "student" ? "StudentDemo123!" : "AlumniDemo123!");
+  };
+
   return (
     <main className="auth-page login-page">
       <div className="auth-bg-pattern auth-bg-pattern-one" aria-hidden="true" />
@@ -172,6 +178,36 @@ export default function LoginPage() {
           <div className="auth-header">
             <h1 id="login-heading">Login to your account</h1>
             <p>Continue your journey with the Alumly community.</p>
+          </div>
+
+          <div style={{ ...credentialBoxStyle }}>
+            <div style={{ fontSize: "13px", fontWeight: 700, color: "var(--primary)", marginBottom: "6px" }}>
+              Demo credentials
+            </div>
+            <div style={{ fontSize: "13px", color: "var(--text-secondary)" }}>
+              Student: <strong>student-demo@alumly.demo</strong> / <strong>StudentDemo123!</strong>
+            </div>
+            <div style={{ fontSize: "13px", color: "var(--text-secondary)" }}>
+              Alumni: <strong>alumni-demo@alumly.demo</strong> / <strong>AlumniDemo123!</strong>
+            </div>
+            <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", marginTop: "4px" }}>
+              <button
+                type="button"
+                onClick={() => fillDemoCredentials("student")}
+                className="auth-demo-button"
+                style={{ ...quickFillButtonStyle, minWidth: "140px" }}
+              >
+                Use demo student
+              </button>
+              <button
+                type="button"
+                onClick={() => fillDemoCredentials("alumni")}
+                className="auth-demo-button"
+                style={{ ...quickFillButtonStyle, minWidth: "140px" }}
+              >
+                Use demo alumni
+              </button>
+            </div>
           </div>
 
           <div style={form}>
@@ -312,6 +348,16 @@ const errorStyle = {
   fontWeight: 600,
 };
 
+const credentialBoxStyle = {
+  border: "1px solid rgba(138, 90, 59, 0.18)",
+  background: "rgba(251, 247, 242, 0.9)",
+  borderRadius: "14px",
+  padding: "12px 14px",
+  display: "grid",
+  gap: "4px",
+  boxShadow: "0 8px 20px rgba(70, 45, 25, 0.05)",
+};
+
 const demoButtonStyle = {
   minHeight: "56px",
   display: "inline-flex",
@@ -327,6 +373,23 @@ const demoButtonStyle = {
   cursor: "pointer",
   boxShadow: "0 8px 18px rgba(70, 45, 25, 0.05)",
   transition: "transform .25s ease, box-shadow .25s ease",
+};
+
+const quickFillButtonStyle = {
+  minHeight: "40px",
+  display: "inline-flex",
+  alignItems: "center",
+  justifyContent: "center",
+  gap: "8px",
+  border: "1px solid rgba(138, 90, 59, 0.24)",
+  borderRadius: "999px",
+  background: "#fffaf5",
+  color: "#6f4328",
+  fontSize: "13px",
+  fontWeight: 700,
+  cursor: "pointer",
+  padding: "0 12px",
+  boxShadow: "0 8px 16px rgba(70, 45, 25, 0.04)",
 };
 
 const demoResetButtonStyle = {
