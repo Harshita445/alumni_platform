@@ -24,8 +24,8 @@ class Settings(BaseSettings):
     CLOUDINARY_CLOUD_NAME: str = ""
     CLOUDINARY_API_KEY: str = ""
     CLOUDINARY_API_SECRET: str = ""
-    FRONTEND_URL: str = "http://localhost:3000"
-    BACKEND_CORS_ORIGINS: str = "http://localhost:3000,http://127.0.0.1:3000"
+    FRONTEND_URL: str = ""
+    BACKEND_CORS_ORIGINS: str = ""
     RAZORPAY_KEY_ID: str = ""
     RAZORPAY_KEY_SECRET: str = ""
     RESEND_API_KEY: str = ""
@@ -46,12 +46,19 @@ class Settings(BaseSettings):
         origins = [origin.strip() for origin in self.BACKEND_CORS_ORIGINS.split(",") if origin.strip()]
         if self.FRONTEND_URL:
             origins.append(self.FRONTEND_URL)
+        if not origins and str(self.NODE_ENV).strip().lower() != "production":
+            origins.extend([
+                "http://localhost:3000",
+                "http://127.0.0.1:3000",
+                "http://localhost:3001",
+                "http://127.0.0.1:3001",
+            ])
         return list(dict.fromkeys(origins))
 
     @property
     def demo_login_enabled(self) -> bool:
         if self.ENABLE_DEMO_LOGIN is None:
-            return False
+            return str(self.NODE_ENV).strip().lower() != "production"
         if isinstance(self.ENABLE_DEMO_LOGIN, bool):
             return self.ENABLE_DEMO_LOGIN
         return str(self.ENABLE_DEMO_LOGIN).strip().lower() in {"1", "true", "yes", "on"}

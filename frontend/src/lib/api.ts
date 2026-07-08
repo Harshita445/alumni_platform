@@ -6,8 +6,12 @@ import type {
 
 export type { Booking, BookingStatus, CreateBookingPayload } from "@/types/Booking";
 
-const API_BASE = (() => {
-  const configuredBase = process.env.NEXT_PUBLIC_API_URL || process.env.BACKEND_URL;
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_URL ??
+  (process.env.NODE_ENV === "production" ? "" : "http://localhost:8000");
+
+function getApiBase() {
+  const configuredBase = API_BASE_URL;
 
   if (configuredBase) {
     return configuredBase.replace(/\/$/, "");
@@ -17,12 +21,47 @@ const API_BASE = (() => {
     if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") {
       return "http://localhost:8000";
     }
-
-    return "/api";
   }
 
-  return "/api";
-})();
+  return "";
+}
+
+export function buildApiUrl(path: string) {
+  const apiBase = getApiBase();
+
+  if (!apiBase) {
+    throw new Error("Backend URL is not configured. Set NEXT_PUBLIC_API_URL to your backend URL.");
+  }
+
+  return `${apiBase}${path}`;
+}
+
+function getRequestErrorMessage(error: unknown, fallback: string) {
+  if (error instanceof Error) {
+    const message = error.message.trim();
+    if (message && !["Failed to fetch", "NetworkError when attempting to fetch resource"].includes(message)) {
+      return message;
+    }
+  }
+
+  return fallback;
+}
+
+async function parseErrorResponse(response: Response) {
+  let errorMessage = response.statusText || "Request failed";
+
+  try {
+    const errorBody = await response.json();
+
+    if (errorBody?.detail) {
+      errorMessage = errorBody.detail;
+    }
+  } catch {
+    // ignore parse failures
+  }
+
+  return errorMessage;
+}
 
 const STORAGE_KEY = "current-user";
 
@@ -151,28 +190,33 @@ async function request(
   path: string,
   options: RequestInit = {}
 ) {
-  const response = await fetch(`${API_BASE}${path}`, {
-    headers: {
-      "Content-Type": "application/json",
-      ...(options.headers || {}),
-    },
-    ...options,
-  });
+  const url = buildApiUrl(path);
 
-  if (!response.ok) {
-    let errorMessage = response.statusText;
+  let response: Response;
 
-    try {
-      const errorBody = await response.json();
-
-      if (errorBody?.detail) {
-        errorMessage = errorBody.detail;
-      }
-    } catch {
-      // ignore parse failures
+  try {
+    if (process.env.NODE_ENV !== "production") {
+      console.debug("[api]", options.method || "GET", url);
     }
 
-    throw new Error(errorMessage || "Request failed");
+    response = await fetch(url, {
+      headers: {
+        "Content-Type": "application/json",
+        ...(options.headers || {}),
+      },
+      ...options,
+    });
+  } catch (error) {
+    throw new Error(getRequestErrorMessage(error, "Unable to connect to Alumly. Please try again."));
+  }
+
+  if (!response.ok) {
+    if (process.env.NODE_ENV !== "production") {
+      console.debug("[api]", response.status, url);
+    }
+
+    const errorMessage = await parseErrorResponse(response);
+    throw new Error(getFriendlyErrorMessage(response.status, errorMessage));
   }
 
   if (response.status === 204) {
@@ -180,6 +224,22 @@ async function request(
   }
 
   return response.json();
+}
+
+function getFriendlyErrorMessage(status: number, message?: string) {
+  if (status === 401) {
+    return "Incorrect email or password.";
+  }
+
+  if (status === 403) {
+    return message || "Your account is not authorized.";
+  }
+
+  if (status >= 500) {
+    return "Something went wrong. Try again later.";
+  }
+
+  return message || "Request failed. Please try again.";
 }
 
 export async function registerUser(payload: {
@@ -247,27 +307,41 @@ export async function loginUser(
   formData.append("username", email);
   formData.append("password", password);
 
-  const response = await fetch(`${API_BASE}/auth/login`, {
-    method: "POST",
-    body: formData,
-  });
+  let response: Response;
 
-  if (!response.ok) {
-    let errorMessage = response.statusText;
-
-    try {
-      const errorBody = await response.json();
-      if (errorBody?.detail) {
-        errorMessage = errorBody.detail;
-      }
-    } catch {
-      // ignore
+  try {
+    const url = buildApiUrl("/auth/login");
+    if (process.env.NODE_ENV !== "production") {
+      console.debug("[api]", "POST", url);
     }
 
-    throw new Error(errorMessage || "Login failed");
+    response = await fetch(url, {
+      method: "POST",
+      body: formData,
+    });
+  } catch (error) {
+    throw new Error(
+      getRequestErrorMessage(error, "Unable to connect to Alumly. Please try again.")
+    );
+  }
+
+  if (!response.ok) {
+    if (process.env.NODE_ENV !== "production") {
+      console.debug("[api]", response.status, "/auth/login");
+    }
+
+    const errorMessage = await parseErrorResponse(response);
+    throw new Error(getFriendlyErrorMessage(response.status, errorMessage));
   }
 
   const tokenData = await response.json();
+
+  if (process.env.NODE_ENV !== "production") {
+    console.debug("[api]", "auth response", {
+      token_type: tokenData.token_type,
+      has_access_token: Boolean(tokenData.access_token),
+    });
+  }
 
   const user = await fetchMe(tokenData.access_token);
   const profile = await fetchProfile(tokenData.access_token);
@@ -287,26 +361,41 @@ export async function loginUser(
 }
 
 export async function demoLogin(role: "student" | "alumni") {
-  const response = await fetch(`${API_BASE}/api/dev/login/${role}`, {
-    method: "POST",
-  });
+  let response: Response;
 
-  if (!response.ok) {
-    let errorMessage = response.statusText;
-
-    try {
-      const errorBody = await response.json();
-      if (errorBody?.detail) {
-        errorMessage = errorBody.detail;
-      }
-    } catch {
-      // ignore
+  try {
+    const url = buildApiUrl(`/api/dev/login/${role}`);
+    if (process.env.NODE_ENV !== "production") {
+      console.debug("[api]", "POST", url);
     }
 
-    throw new Error(errorMessage || "Demo login failed");
+    response = await fetch(url, {
+      method: "POST",
+    });
+  } catch (error) {
+    throw new Error(
+      getRequestErrorMessage(error, "Unable to connect to Alumly. Please try again.")
+    );
+  }
+
+  if (!response.ok) {
+    if (process.env.NODE_ENV !== "production") {
+      console.debug("[api]", response.status, `/api/dev/login/${role}`);
+    }
+
+    const errorMessage = await parseErrorResponse(response);
+    throw new Error(getFriendlyErrorMessage(response.status, errorMessage));
   }
 
   const tokenData = await response.json();
+
+  if (process.env.NODE_ENV !== "production") {
+    console.debug("[api]", "demo auth response", {
+      role,
+      token_type: tokenData.token_type,
+      has_access_token: Boolean(tokenData.access_token),
+    });
+  }
 
   const user = await fetchMe(tokenData.access_token);
   const profile = await fetchProfile(tokenData.access_token);
@@ -404,7 +493,7 @@ export async function uploadProfilePicture(token: string, file: File) {
   const formData = new FormData();
   formData.append("file", file);
 
-  const response = await fetch(`${API_BASE}/api/upload/profile-picture`, {
+  const response = await fetch(buildApiUrl("/api/upload/profile-picture"), {
     method: "POST",
     headers: {
       Authorization: `Bearer ${token}`,
@@ -424,7 +513,7 @@ export async function uploadResume(token: string, file: File) {
   const formData = new FormData();
   formData.append("file", file);
 
-  const response = await fetch(`${API_BASE}/api/upload/resume`, {
+  const response = await fetch(buildApiUrl("/api/upload/resume"), {
     method: "POST",
     headers: {
       Authorization: `Bearer ${token}`,
@@ -500,7 +589,7 @@ export async function createBooking(
   token: string,
   data: CreateBookingPayload
 ): Promise<Booking> {
-  return request("/bookings", {
+  return request("/bookings/", {
     method: "POST",
     headers: getAuthHeaders(token),
     body: JSON.stringify(data),
@@ -552,7 +641,7 @@ export async function createAvailability(
     timezone?: string;
   }
 ): Promise<AvailabilitySlot> {
-  return request("/availability", {
+  return request("/availability/", {
     method: "POST",
     headers: getAuthHeaders(token),
     body: JSON.stringify(data),
@@ -643,6 +732,36 @@ export async function createPayment(token: string, bookingId: number) {
     method: "POST",
     headers: getAuthHeaders(token),
     body: JSON.stringify({ booking_id: bookingId }),
+  });
+}
+
+export async function markPaymentPaid(token: string, paymentId: number | string) {
+  return request(`/payments/${paymentId}/mark-paid`, {
+    method: "POST",
+    headers: getAuthHeaders(token),
+  });
+}
+
+export type PayoutSettings = {
+  method?: string | null;
+  upi_id?: string | null;
+  account_holder?: string | null;
+  account_number?: string | null;
+  ifsc?: string | null;
+  verified?: string | null;
+};
+
+export async function fetchPayoutSettings(token: string): Promise<PayoutSettings | null> {
+  return request("/payments/payout-settings/me", {
+    headers: getAuthHeaders(token),
+  });
+}
+
+export async function savePayoutSettings(token: string, data: PayoutSettings): Promise<PayoutSettings> {
+  return request("/payments/payout-settings", {
+    method: "POST",
+    headers: getAuthHeaders(token),
+    body: JSON.stringify(data),
   });
 }
 

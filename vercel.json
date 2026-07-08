@@ -5,6 +5,7 @@
   "buildCommand": "npm run build",
   "outputDirectory": ".next",
   "env": {
-    "NEXT_PUBLIC_ENABLE_DEMO_LOGIN": "true"
+    "NEXT_PUBLIC_ENABLE_DEMO_LOGIN": "true",
+    "NEXT_PUBLIC_API_URL": "https://alumni-platform-pmrq.onrender.com"
   }
 }

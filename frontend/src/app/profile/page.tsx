@@ -11,8 +11,10 @@ import { useAuth } from "@/hooks/useAuth";
 import {
   UserProfile,
   fetchMentorshipServices,
+  fetchPayoutSettings,
   upsertMentorshipService,
   createAvailability,
+  savePayoutSettings,
   updateProfile,
   mergeProfileIntoStoredUser,
 } from "@/lib/api";
@@ -455,22 +457,17 @@ function AlumniSection({ profile }: { profile: UserProfile }) {
         );
         setPricing(nextPricing);
 
-        const payoutResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/payments/payout-settings/me`, {
-          headers: { Authorization: `Bearer ${user.access_token}` },
-        });
-        if (payoutResponse.ok) {
-          const payoutData = await payoutResponse.json();
-          if (payoutData) {
-            setPayoutMethod(payoutData.method || "UPI");
-            setPayoutDetails({
-              upiId: payoutData.upi_id || "",
-              accountHolder: payoutData.account_holder || "",
-              accountNumber: payoutData.account_number || "",
-              confirmAccountNumber: payoutData.account_number || "",
-              ifsc: payoutData.ifsc || "",
-            });
-            setPayoutVerified(payoutData.verified || "pending");
-          }
+        const payoutData = await fetchPayoutSettings(user.access_token);
+        if (payoutData) {
+          setPayoutMethod(payoutData.method || "UPI");
+          setPayoutDetails({
+            upiId: payoutData.upi_id || "",
+            accountHolder: payoutData.account_holder || "",
+            accountNumber: payoutData.account_number || "",
+            confirmAccountNumber: payoutData.account_number || "",
+            ifsc: payoutData.ifsc || "",
+          });
+          setPayoutVerified(payoutData.verified || "pending");
         }
       } catch {
         setStatus("We could not load the latest mentorship settings right now.");
@@ -547,21 +544,13 @@ function AlumniSection({ profile }: { profile: UserProfile }) {
     }
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/payments/payout-settings`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${user.access_token}` },
-        body: JSON.stringify({
-          method: payoutMethod,
-          upi_id: payoutMethod === "UPI" ? payoutDetails.upiId : null,
-          account_holder: payoutMethod === "Bank Transfer" ? payoutDetails.accountHolder : null,
-          account_number: payoutMethod === "Bank Transfer" ? payoutDetails.accountNumber : null,
-          ifsc: payoutMethod === "Bank Transfer" ? payoutDetails.ifsc : null,
-        }),
+      await savePayoutSettings(user.access_token, {
+        method: payoutMethod,
+        upi_id: payoutMethod === "UPI" ? payoutDetails.upiId : null,
+        account_holder: payoutMethod === "Bank Transfer" ? payoutDetails.accountHolder : null,
+        account_number: payoutMethod === "Bank Transfer" ? payoutDetails.accountNumber : null,
+        ifsc: payoutMethod === "Bank Transfer" ? payoutDetails.ifsc : null,
       });
-
-      if (!response.ok) {
-        throw new Error("Could not save payout details.");
-      }
 
       setStatus("Payout details saved.");
       setPayoutVerified("pending");

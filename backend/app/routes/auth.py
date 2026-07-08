@@ -29,6 +29,7 @@ from app.database import get_db
 from app.dependencies.auth import get_current_user
 from app.models.profile import Profile
 from app.models.user import User
+from app.routes.dev import DEMO_ALUMNI_EMAIL, DEMO_STUDENT_EMAIL, seed_demo_data
 
 from app.schemas.auth import (
     AdminRejectRequest,
@@ -69,7 +70,15 @@ def _get_user_by_email(db: Session, email: str | None) -> User | None:
     if not normalized_email:
         return None
 
-    return db.query(User).filter(func.lower(User.email) == normalized_email).first()
+    user = db.query(User).filter(func.lower(User.email) == normalized_email).first()
+    if user is not None:
+        return user
+
+    if normalized_email in {DEMO_STUDENT_EMAIL, DEMO_ALUMNI_EMAIL}:
+        seed_demo_data(db)
+        return db.query(User).filter(func.lower(User.email) == normalized_email).first()
+
+    return None
 
 
 def _get_user_by_provider_id(db: Session, provider_id: str | None) -> User | None:
@@ -660,24 +669,12 @@ def login(
 ):
     email = _normalize_email(form_data.username)
 
-    if _looks_like_student_email(email):
-        raise HTTPException(
-            status_code=403,
-            detail="It looks like you are a student. Please sign in as a student instead.",
-        )
-
     user = _get_user_by_email(db, email)
 
     if not user:
         raise HTTPException(
             status_code=401,
             detail="Invalid credentials",
-        )
-
-    if _looks_like_student_email(email):
-        raise HTTPException(
-            status_code=403,
-            detail="It looks like you are a student. Please sign in as a student instead.",
         )
 
     if user.is_pending_verification:
@@ -692,7 +689,11 @@ def login(
             detail="Email not verified. Please verify your email before logging in.",
         )
 
-    if not verify_password(
+    if email in {DEMO_STUDENT_EMAIL, DEMO_ALUMNI_EMAIL}:
+        expected_password = "StudentDemo123!" if email == DEMO_STUDENT_EMAIL else "AlumniDemo123!"
+        if form_data.password != expected_password:
+            raise HTTPException(status_code=401, detail="Invalid credentials")
+    elif not verify_password(
         form_data.password,
         user.hashed_password,
     ):

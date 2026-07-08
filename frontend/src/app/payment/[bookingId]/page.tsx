@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 
 import { useAuth } from "@/hooks/useAuth";
-import { createPayment, fetchMentorshipServices, fetchMyBookings } from "@/lib/api";
+import { createPayment, fetchMentorshipServices, fetchMyBookings, markPaymentPaid } from "@/lib/api";
 import { PLATFORM_FEE_PERCENT } from "@/config/platform";
 import type { Booking } from "@/types/Booking";
 
@@ -80,23 +80,7 @@ export default function PaymentPage() {
 
       setPayment(paymentResult);
 
-      const paymentConfirmationResponse = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/payments/${paymentResult.id}/mark-paid`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${user.access_token}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      if (!paymentConfirmationResponse.ok) {
-        const errorBody = await paymentConfirmationResponse.json().catch(() => null);
-        throw new Error(errorBody?.detail || "Payment confirmation failed.");
-      }
-
-      const confirmedPayment = await paymentConfirmationResponse.json();
+      const confirmedPayment = await markPaymentPaid(user.access_token, paymentResult.id);
 
       window.localStorage.setItem(
         "latest-payment",
