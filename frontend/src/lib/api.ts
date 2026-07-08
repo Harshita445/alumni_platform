@@ -365,57 +365,10 @@ export async function loginUser(
 }
 
 export async function demoLogin(role: "student" | "alumni") {
-  let response: Response;
+  const email = role === "student" ? "student-demo@alumly.demo" : "alumni-demo@alumly.demo";
+  const password = role === "student" ? "StudentDemo123!" : "AlumniDemo123!";
 
-  try {
-    const url = buildApiUrl(`/api/dev/login/${role}`);
-    if (process.env.NODE_ENV !== "production") {
-      console.debug("[api]", "POST", url);
-    }
-
-    response = await fetch(url, {
-      method: "POST",
-    });
-  } catch (error) {
-    throw new Error(
-      getRequestErrorMessage(error, "Unable to connect to Alumly. Please try again.")
-    );
-  }
-
-  if (!response.ok) {
-    if (process.env.NODE_ENV !== "production") {
-      console.debug("[api]", response.status, `/api/dev/login/${role}`);
-    }
-
-    const errorMessage = await parseErrorResponse(response);
-    throw new Error(getFriendlyErrorMessage(response.status, errorMessage));
-  }
-
-  const tokenData = await response.json();
-
-  if (process.env.NODE_ENV !== "production") {
-    console.debug("[api]", "demo auth response", {
-      role,
-      token_type: tokenData.token_type,
-      has_access_token: Boolean(tokenData.access_token),
-    });
-  }
-
-  const user = await fetchMe(tokenData.access_token);
-  const profile = await fetchProfile(tokenData.access_token);
-
-  const storedUser: StoredUser = {
-    ...user,
-    access_token: tokenData.access_token,
-    token_type: tokenData.token_type,
-    profile,
-    verification_status: user.verification_status ?? "verified",
-    onboarding_step: user.onboarding_step ?? 0,
-  };
-
-  saveStoredUser(storedUser);
-
-  return storedUser;
+  return loginUser(email, password);
 }
 
 export async function resetDemoData() {
