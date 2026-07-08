@@ -39,7 +39,11 @@ export function buildApiUrl(path: string) {
 function getRequestErrorMessage(error: unknown, fallback: string) {
   if (error instanceof Error) {
     const message = error.message.trim();
-    if (message && !["Failed to fetch", "NetworkError when attempting to fetch resource"].includes(message)) {
+    if (
+      message &&
+      !message.toLowerCase().includes("failed to fetch") &&
+      !message.toLowerCase().includes("networkerror when attempting to fetch resource")
+    ) {
       return message;
     }
   }

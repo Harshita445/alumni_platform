@@ -93,7 +93,16 @@ export default function LoginPage() {
     setIsSubmitting(true);
 
     try {
-      const storedUser = await loginUser(email, password);
+      const normalizedEmail = email.trim().toLowerCase();
+      const demoRole =
+        normalizedEmail === "student-demo@alumly.demo"
+          ? "student"
+          : normalizedEmail === "alumni-demo@alumly.demo"
+          ? "alumni"
+          : null;
+      const storedUser = demoRole
+        ? await demoLogin(demoRole)
+        : await loginUser(email, password);
       login(storedUser);
       router.replace(getLoginDestination(storedUser));
     } catch (err: unknown) {
