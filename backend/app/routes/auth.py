@@ -29,7 +29,6 @@ from app.database import get_db
 from app.dependencies.auth import get_current_user
 from app.models.profile import Profile
 from app.models.user import User
-from app.routes.dev import DEMO_ALUMNI_EMAIL, DEMO_STUDENT_EMAIL, seed_demo_data
 
 from app.schemas.auth import (
     AdminRejectRequest,
@@ -41,6 +40,9 @@ from app.schemas.auth import (
     RegisterRequest,
     TokenResponse,
 )
+
+DEMO_STUDENT_EMAIL = "student-demo@alumly.demo"
+DEMO_ALUMNI_EMAIL = "alumni-demo@alumly.demo"
 
 from pydantic import BaseModel
 
@@ -75,10 +77,58 @@ def _get_user_by_email(db: Session, email: str | None) -> User | None:
         return user
 
     if normalized_email in {DEMO_STUDENT_EMAIL, DEMO_ALUMNI_EMAIL}:
-        seed_demo_data(db)
-        return db.query(User).filter(func.lower(User.email) == normalized_email).first()
+        return _ensure_demo_user(db, normalized_email)
 
     return None
+
+
+def _ensure_demo_user(db: Session, email: str) -> User:
+    is_student = email == DEMO_STUDENT_EMAIL
+    user = db.query(User).filter(func.lower(User.email) == email).first()
+    expected_password = "StudentDemo123!" if is_student else "AlumniDemo123!"
+
+    if user is None:
+        user = User(
+            email=email,
+            role="student" if is_student else "alumni",
+            auth_provider="demo",
+            hashed_password=hash_password(expected_password),
+        )
+        db.add(user)
+        db.flush()
+
+    user.role = "student" if is_student else "alumni"
+    user.display_name = "Harshita Kumar" if is_student else "Rahul Sharma"
+    user.auth_provider = "demo"
+    user.hashed_password = hash_password(expected_password)
+    user.is_verified = True
+    user.is_pending_verification = False
+    user.verification_status = "approved"
+    user.onboarding_completed = True
+    user.is_demo = True
+
+    profile = db.query(Profile).filter(Profile.user_id == user.id).first()
+    if profile is None:
+        profile = Profile(user_id=user.id)
+        db.add(profile)
+
+    profile.full_name = user.display_name
+    profile.branch = "Computer Engineering"
+    profile.graduation_year = 2027 if is_student else 2019
+    if is_student:
+        profile.skills = ["Python", "React", "Machine Learning", "Data Structures"]
+        profile.career_interests = ["Software Engineering", "AI", "Product Management"]
+        profile.goals = "Explore mentorship and prepare for interviews."
+    else:
+        profile.company = "Google"
+        profile.designation = "Senior Software Engineer"
+        profile.bio = "Demo alumni mentor for career guidance and interview prep."
+        profile.expertise = ["System Design", "Backend", "Career Guidance"]
+        profile.mentorship_services = ["Career Guidance", "Mock Interview", "Resume Review"]
+
+    db.commit()
+    db.refresh(user)
+    return user
 
 
 def _get_user_by_provider_id(db: Session, provider_id: str | None) -> User | None:

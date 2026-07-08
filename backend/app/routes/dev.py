@@ -86,14 +86,22 @@ def _user_payload(user: User) -> dict:
 
 def _upsert_user(db: Session, email: str, role: str, name: str) -> User:
     user = db.query(User).filter(func.lower(User.email) == email.lower()).first()
+    password = (
+        "StudentDemo123!"
+        if email.lower() == DEMO_STUDENT_EMAIL
+        else "AlumniDemo123!"
+        if email.lower() == DEMO_ALUMNI_EMAIL
+        else "DemoPass123!"
+    )
     if user is None:
-        user = User(email=email, role=role, auth_provider="demo", hashed_password=hash_password("DemoPass123!"))
+        user = User(email=email, role=role, auth_provider="demo", hashed_password=hash_password(password))
         db.add(user)
         db.flush()
 
     user.role = role
     user.display_name = name
     user.auth_provider = "demo"
+    user.hashed_password = hash_password(password)
     user.is_verified = True
     user.is_demo = True
     user.is_pending_verification = False
@@ -368,10 +376,27 @@ _schedule_demo_reset()
 
 def _login_as(role: str, db: Session):
     _require_demo_mode()
-    users = seed_demo_data(db)
-    user = users[role]
+    email = DEMO_STUDENT_EMAIL if role == "student" else DEMO_ALUMNI_EMAIL
+    name = "Harshita Kumar" if role == "student" else "Rahul Sharma"
+    user = _upsert_user(db, email, role, name)
+    _upsert_profile(
+        db,
+        user,
+        full_name=name,
+        branch="Computer Engineering",
+        graduation_year=2027 if role == "student" else 2019,
+        company="Google" if role == "alumni" else None,
+        designation="Senior Software Engineer" if role == "alumni" else None,
+        bio="Demo alumni mentor for career guidance and interview prep." if role == "alumni" else None,
+        expertise=["System Design", "Backend", "Career Guidance"] if role == "alumni" else [],
+        mentorship_services=["Career Guidance", "Mock Interview", "Resume Review"] if role == "alumni" else [],
+        skills=["Python", "React", "Machine Learning", "Data Structures"] if role == "student" else ["System Design", "Backend", "Career Guidance"],
+        career_interests=["Software Engineering", "AI", "Product Management"] if role == "student" else [],
+        goals="Explore mentorship and prepare for interviews." if role == "student" else None,
+    )
     token_data = _issue_token_pair(user)
     db.commit()
+    db.refresh(user)
     return {**token_data, "role": user.role, "user": _user_payload(user)}
 
 
