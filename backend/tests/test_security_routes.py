@@ -183,6 +183,35 @@ def test_login_rejects_student_email_patterns_with_student_message():
     assert "student" in response.json()["detail"].lower()
 
 
+@pytest.mark.parametrize(
+    ("email", "password"),
+    [
+        ("student-demo@alumly.demo", "StudentDemo123!"),
+        ("alumni-demo@alumly.demo", "AlumniDemo123!"),
+    ],
+)
+def test_login_accepts_seeded_demo_credentials(email, password):
+    db = SessionLocal()
+    try:
+        db.query(User).filter(User.email == email).delete(synchronize_session=False)
+        db.commit()
+
+        response = client.post(
+            "/auth/login",
+            data={
+                "username": email,
+                "password": password,
+            },
+        )
+
+        assert response.status_code == 200
+        assert response.json()["access_token"]
+    finally:
+        db.query(User).filter(User.email == email).delete(synchronize_session=False)
+        db.commit()
+        db.close()
+
+
 def test_dev_demo_student_login_creates_session_with_seed_data():
     db = SessionLocal()
     original_node_env = dev_routes.settings.NODE_ENV
