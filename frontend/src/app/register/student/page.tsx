@@ -171,6 +171,8 @@ export default function StudentRegisterPage() {
       <section className={styles.shell} aria-labelledby="student-register-heading">
         <div className={styles.formSide}>
           <div className={styles.formCard}>
+            <img src="/logo.png" alt="Alumly logo" className={styles.authLogo} />
+
             <div className={styles.kicker}>
               <GraduationCap size={18} strokeWidth={1.8} />
               Student Registration

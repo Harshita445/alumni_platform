@@ -104,6 +104,13 @@
   animation: formRise 700ms ease-out both;
 }
 
+.authLogo {
+  width: auto;
+  height: 44px;
+  margin-bottom: 28px;
+  object-fit: contain;
+}
+
 .kicker {
   display: inline-flex;
   align-items: center;

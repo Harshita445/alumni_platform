@@ -2,8 +2,12 @@ import Link from "next/link";
 import {
   ArrowRight,
   Calendar,
+  CheckCircle2,
+  Clock3,
   FileText,
   GraduationCap,
+  Handshake,
+  Mail,
   MessageCircle,
   Quote,
   ShieldCheck,
@@ -59,32 +63,13 @@ const audiences = [
   },
 ];
 
-const testimonials = [
-  {
-    name: "Aarav Mehta",
-    meta: "CSE, 3rd year",
-    quote:
-      "The advice felt specific to Thapar placements, not generic career content.",
-  },
-  {
-    name: "Nandini Rao",
-    meta: "ECE, final year",
-    quote:
-      "My mentor helped me turn scattered project work into a confident interview story.",
-  },
-  {
-    name: "Kabir Singh",
-    meta: "Mechanical, 2nd year",
-    quote:
-      "It made internships feel less confusing because I could ask someone who had done it.",
-  },
-];
-
 export default function HomePage() {
   return (
     <main className="landing-page">
       <section className="hero-section">
         <div className="hero-copy">
+          <img className="hero-logo" src="/logo.png" alt="Alumly" />
+
           <div className="hero-pill">
             <UsersRound size={16} strokeWidth={2.4} aria-hidden="true" />
             Built for students. Powered by alumni.
@@ -183,30 +168,77 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="landing-section proof-section">
-        <div className="decor proof-line" aria-hidden="true" />
-        <div className="section-heading">
-          <h2>Why students trust Alumly</h2>
+      <section className="mission-section">
+        <div className="mission-copy fade-up">
+          <span className="mission-label">Our Mission</span>
+          <h2>Why We Built Alumly</h2>
+          <p>
+            Reaching out to alumni shouldn&apos;t feel like sending hundreds of
+            cold LinkedIn messages.
+          </p>
+          <p>
+            Alumly creates a trusted space where Thapar students can connect
+            with alumni who genuinely want to help.
+          </p>
         </div>
 
-        <div className="testimonial-grid">
-          {testimonials.map(({ name, meta, quote }) => (
-            <article className="testimonial-card" key={name}>
-              <div className="testimonial-person">
-                <div className="avatar-placeholder">
-                  {name
-                    .split(" ")
-                    .map((part) => part[0])
-                    .join("")}
+        <div className="mission-card-wrap fade-up">
+          <div className="mission-blob" aria-hidden="true" />
+          <article className="mission-card">
+            <div className="mission-icon">
+              <Handshake size={34} strokeWidth={1.8} aria-hidden="true" />
+            </div>
+            <h3>Built for meaningful connections</h3>
+            <p>
+              Helping students discover mentors, gain career guidance, and
+              build relationships that extend beyond a single session.
+            </p>
+            <div className="mission-benefits">
+              {["Verified Alumni", "Structured Mentorship", "Trusted Community"].map((benefit) => (
+                <div className="mission-benefit" key={benefit}>
+                  <CheckCircle2 size={18} strokeWidth={2.2} aria-hidden="true" />
+                  <span>{benefit}</span>
                 </div>
-                <div>
-                  <h3>{name}</h3>
-                  <span>{meta}</span>
-                </div>
+              ))}
+            </div>
+          </article>
+        </div>
+      </section>
+
+      <section className="contact-section fade-up">
+        <div className="contact-card">
+          <div className="contact-orb contact-orb-one" aria-hidden="true" />
+          <div className="contact-orb contact-orb-two" aria-hidden="true" />
+
+          <div className="contact-copy">
+            <span>Get In Touch</span>
+            <h2>Need Help?</h2>
+            <p>
+              Questions, feedback, or partnership opportunities?
+              <br />
+              We&apos;d love to hear from you and help you make the most of Alumly.
+            </p>
+          </div>
+
+          <aside className="contact-info-card">
+            <div className="contact-info-row">
+              <Mail size={20} strokeWidth={2} aria-hidden="true" />
+              <div>
+                <span>Email</span>
+                <strong>hello@alumly.in</strong>
               </div>
-              <p>&quot;{quote}&quot;</p>
-            </article>
-          ))}
+            </div>
+            <div className="contact-info-row">
+              <Clock3 size={20} strokeWidth={2} aria-hidden="true" />
+              <div>
+                <span>Support</span>
+                <strong>Response within 24-48 hours</strong>
+              </div>
+            </div>
+            <a className="contact-button" href="mailto:hello@alumly.in">
+              Contact Us
+            </a>
+          </aside>
         </div>
       </section>
     </main>

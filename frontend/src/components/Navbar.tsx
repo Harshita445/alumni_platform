@@ -52,9 +52,9 @@ export default function Navbar() {
           }}
         >
           <img
-            src="/logo.svg"
+            src="/logo.png"
             alt="Alumly logo"
-            style={{ height: 72, width: "auto" }}
+            style={{ height: 42, width: "auto", objectFit: "contain", marginRight: 12 }}
           />
         </Link>
 

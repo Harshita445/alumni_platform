@@ -223,6 +223,8 @@ export default function OnboardingPage() {
 
       <section className="auth-card" style={{ maxWidth: "1100px", minHeight: "780px" }}>
         <div className="auth-form-panel" style={{ padding: "36px 34px" }}>
+          <img src="/logo.png" alt="Alumly logo" className="auth-form-logo" />
+
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "18px", gap: "12px" }}>
             <div>
               <p style={{ color: "var(--primary)", fontWeight: 700, margin: 0 }}>Onboarding</p>

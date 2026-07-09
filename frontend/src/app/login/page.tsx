@@ -163,7 +163,7 @@ export default function LoginPage() {
           />
           <div className="auth-brand-overlay" />
           <div className="auth-brand-content">
-            <img src="/logo.svg" alt="" className="auth-logo" />
+            <img src="/logo.png" alt="" className="auth-logo" />
             <p className="auth-brand-kicker">
               Built for students, powered by alumni.
             </p>
@@ -175,6 +175,8 @@ export default function LoginPage() {
         </aside>
 
         <div className="auth-form-panel">
+          <img src="/logo.png" alt="Alumly logo" className="auth-form-logo" />
+
           <div className="auth-header">
             <h1 id="login-heading">Login to your account</h1>
             <p>Continue your journey with the Alumly community.</p>

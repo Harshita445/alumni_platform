@@ -142,6 +142,8 @@ export default function AlumniRegisterPage() {
       <section className={styles.shell} aria-labelledby="alumni-register-heading">
         <div className={styles.formSide}>
           <div className={styles.formCard}>
+            <img src="/logo.png" alt="Alumly logo" className={styles.authLogo} />
+
             <div className={styles.kicker}>
               <Briefcase size={18} strokeWidth={1.8} />
               Alumni Registration
