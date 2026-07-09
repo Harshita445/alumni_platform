@@ -2,7 +2,6 @@ import Link from "next/link";
 import {
   ArrowRight,
   Calendar,
-  CheckCircle2,
   Clock3,
   FileText,
   GraduationCap,
@@ -169,35 +168,96 @@ export default function HomePage() {
       </section>
 
       <section className="mission-section">
+        <div className="mission-dots mission-dots-top" aria-hidden="true" />
+        <div className="mission-dots mission-dots-bottom" aria-hidden="true" />
+        <div className="mission-building" aria-hidden="true" />
+
         <div className="mission-copy fade-up">
-          <span className="mission-label">Our Mission</span>
-          <h2>Why We Built Alumly</h2>
-          <p>
-            Reaching out to alumni shouldn&apos;t feel like sending hundreds of
-            cold LinkedIn messages.
+          <div className="mission-label-wrap">
+            <span className="mission-label">Our Mission</span>
+            <span className="mission-label-line" aria-hidden="true" />
+          </div>
+          <h2>
+            Built for <span>meaningful</span> connections
+          </h2>
+          <p className="mission-lede">
+            We believe every student deserves guidance, and every alumnus has
+            experiences worth sharing. Alumly brings the two together in a
+            trusted space designed for career clarity, mentorship, and
+            relationships that last beyond a single conversation.
           </p>
-          <p>
-            Alumly creates a trusted space where Thapar students can connect
-            with alumni who genuinely want to help.
-          </p>
+
+          <div className="mission-feature-row">
+            {[
+              {
+                Icon: ShieldCheck,
+                title: "Trust & Verification",
+                description: "Every alumni profile is verified for a safe and reliable space.",
+              },
+              {
+                Icon: Users,
+                title: "Mentorship That Matters",
+                description: "Book 1:1 or group sessions tailored to your goals.",
+              },
+              {
+                Icon: MessageCircle,
+                title: "Community First",
+                description: "Ask, discuss, share, and grow with the Thapar community.",
+              },
+            ].map(({ Icon, title, description }) => (
+              <article className="mission-feature" key={title}>
+                <div className="mission-feature-icon">
+                  <Icon size={22} strokeWidth={1.9} aria-hidden="true" />
+                </div>
+                <h3>{title}</h3>
+                <p>{description}</p>
+              </article>
+            ))}
+          </div>
+
+          <Link className="mission-cta" href="/register">
+            Join the Alumly Community
+            <ArrowRight size={18} strokeWidth={2.2} aria-hidden="true" />
+          </Link>
         </div>
 
         <div className="mission-card-wrap fade-up">
-          <div className="mission-blob" aria-hidden="true" />
           <article className="mission-card">
             <div className="mission-icon">
               <Handshake size={34} strokeWidth={1.8} aria-hidden="true" />
             </div>
-            <h3>Built for meaningful connections</h3>
+            <h3>Connecting today, empowering tomorrow.</h3>
             <p>
-              Helping students discover mentors, gain career guidance, and
-              build relationships that extend beyond a single session.
+              Alumly is more than a platform. It is a movement to create lasting
+              relationships, unlock opportunities, and build a stronger future
+              for every student.
             </p>
             <div className="mission-benefits">
-              {["Verified Alumni", "Structured Mentorship", "Trusted Community"].map((benefit) => (
-                <div className="mission-benefit" key={benefit}>
-                  <CheckCircle2 size={18} strokeWidth={2.2} aria-hidden="true" />
-                  <span>{benefit}</span>
+              {[
+                {
+                  Icon: ShieldCheck,
+                  title: "Verified Alumni Network",
+                  description: "Connect with trusted professionals from diverse industries and roles.",
+                },
+                {
+                  Icon: Calendar,
+                  title: "Structured Mentorship",
+                  description: "Find mentors, choose your time, and grow through meaningful sessions.",
+                },
+                {
+                  Icon: Users,
+                  title: "Engaged Community",
+                  description: "Participate in discussions, events, and knowledge sharing.",
+                },
+              ].map(({ Icon, title, description }) => (
+                <div className="mission-benefit" key={title}>
+                  <div className="mission-benefit-icon">
+                    <Icon size={22} strokeWidth={1.9} aria-hidden="true" />
+                  </div>
+                  <div>
+                    <strong>{title}</strong>
+                    <span>{description}</span>
+                  </div>
                 </div>
               ))}
             </div>
