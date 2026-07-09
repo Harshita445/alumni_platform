@@ -2,6 +2,7 @@ import Link from "next/link";
 import {
   ArrowRight,
   Calendar,
+  Check,
   Clock3,
   FileText,
   GraduationCap,
@@ -187,41 +188,27 @@ export default function HomePage() {
             relationships that last beyond a single conversation.
           </p>
 
-          <div className="mission-feature-row">
+          <div className="mission-stats">
             {[
-              {
-                Icon: ShieldCheck,
-                title: "Trust & Verification",
-                description: "Every alumni profile is verified for a safe and reliable space.",
-              },
-              {
-                Icon: Users,
-                title: "Mentorship That Matters",
-                description: "Book 1:1 or group sessions tailored to your goals.",
-              },
-              {
-                Icon: MessageCircle,
-                title: "Community First",
-                description: "Ask, discuss, share, and grow with the Thapar community.",
-              },
-            ].map(({ Icon, title, description }) => (
-              <article className="mission-feature" key={title}>
-                <div className="mission-feature-icon">
-                  <Icon size={22} strokeWidth={1.9} aria-hidden="true" />
-                </div>
-                <h3>{title}</h3>
-                <p>{description}</p>
-              </article>
+              { label: "Verified Alumni", value: "500+" },
+              { label: "Sessions", value: "1000+" },
+              { label: "Companies", value: "100+" },
+            ].map((stat) => (
+              <div className="mission-stat" key={stat.label}>
+                <div className="mission-stat-value">{stat.value}</div>
+                <div className="mission-stat-label">{stat.label}</div>
+              </div>
             ))}
           </div>
 
-          <Link className="mission-cta" href="/register">
-            Join the Alumly Community
+          <Link className="mission-cta" href="/search">
+            Explore Alumni
             <ArrowRight size={18} strokeWidth={2.2} aria-hidden="true" />
           </Link>
         </div>
 
         <div className="mission-card-wrap fade-up">
+          <div className="mission-card-illustration" aria-hidden="true" />
           <article className="mission-card">
             <div className="mission-icon">
               <Handshake size={34} strokeWidth={1.8} aria-hidden="true" />
@@ -234,30 +221,16 @@ export default function HomePage() {
             </p>
             <div className="mission-benefits">
               {[
-                {
-                  Icon: ShieldCheck,
-                  title: "Verified Alumni Network",
-                  description: "Connect with trusted professionals from diverse industries and roles.",
-                },
-                {
-                  Icon: Calendar,
-                  title: "Structured Mentorship",
-                  description: "Find mentors, choose your time, and grow through meaningful sessions.",
-                },
-                {
-                  Icon: Users,
-                  title: "Engaged Community",
-                  description: "Participate in discussions, events, and knowledge sharing.",
-                },
-              ].map(({ Icon, title, description }) => (
-                <div className="mission-benefit" key={title}>
-                  <div className="mission-benefit-icon">
-                    <Icon size={22} strokeWidth={1.9} aria-hidden="true" />
+                "Verified Alumni",
+                "Structured Mentorship",
+                "Community Discussions",
+                "Events & Updates",
+              ].map((benefit) => (
+                <div className="mission-benefit-row" key={benefit}>
+                  <div className="mission-benefit-check">
+                    <Check size={16} strokeWidth={3} aria-hidden="true" />
                   </div>
-                  <div>
-                    <strong>{title}</strong>
-                    <span>{description}</span>
-                  </div>
+                  <span>{benefit}</span>
                 </div>
               ))}
             </div>
