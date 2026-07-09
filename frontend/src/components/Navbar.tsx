@@ -54,19 +54,12 @@ export default function Navbar() {
           <img
             src="/logo.png"
             alt="Alumly logo"
-            style={{ height: 42, width: "auto", objectFit: "contain", marginRight: 12 }}
-          />
-        </Link>
-
-        <div
-          className="site-nav-links"
-          style={{
-            display: "flex",
-            gap: "38px",
-            alignItems: "center",
-            flexWrap: "wrap",
-            justifyContent: "center",
-            flex: "1 1 auto",
+              style={{
+                height: 52,
+                width: "auto",
+                objectFit: "contain",
+                marginRight: 14,
+              }}
             fontSize: "19px",
           }}
         >

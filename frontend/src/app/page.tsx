@@ -68,8 +68,6 @@ export default function HomePage() {
     <main className="landing-page">
       <section className="hero-section">
         <div className="hero-copy">
-          <img className="hero-logo" src="/logo.png" alt="Alumly" />
-
           <div className="hero-pill">
             <UsersRound size={16} strokeWidth={2.4} aria-hidden="true" />
             Built for students. Powered by alumni.
