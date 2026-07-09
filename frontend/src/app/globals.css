@@ -700,8 +700,7 @@ img {
     border-color 220ms ease;
 }
 
-.mission-card:hover,
-.contact-info-card:hover {
+.mission-card:hover {
   transform: translateY(-4px);
 }
 
@@ -844,138 +843,144 @@ img {
 }
 
 .contact-section {
-  display: flex;
-  justify-content: center;
-  padding: 0 0 120px;
+  position: relative;
+  width: min(1400px, calc(100vw - 48px));
+  margin: 120px auto 80px;
 }
 
 .contact-card {
   position: relative;
-  display: grid;
+  display: flex;
   width: 100%;
-  max-width: 1100px;
-  grid-template-columns: minmax(0, 1fr) minmax(300px, 0.45fr);
-  gap: 44px;
+  max-width: 1400px;
+  flex-direction: column;
   align-items: center;
+  justify-content: center;
   overflow: hidden;
-  padding: 60px;
+  padding: 80px 60px;
+  text-align: center;
+  border: 1px solid #EFE4D8;
   border-radius: 32px;
-  background: linear-gradient(135deg, #6e442b, #4a2f1f);
-  box-shadow: 0 24px 70px rgba(74, 47, 31, 0.18);
+  background: #FFFCF8;
+  box-shadow: 0 20px 60px rgba(70, 40, 20, 0.08);
 }
 
-.contact-orb {
-  position: absolute;
-  width: 260px;
-  height: 260px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.08);
-  filter: blur(8px);
-  pointer-events: none;
-}
-
-.contact-orb-one {
-  top: -116px;
-  right: -86px;
-}
-
-.contact-orb-two {
-  left: -98px;
-  bottom: -132px;
-}
-
-.contact-copy,
-.contact-info-card {
+.contact-card > *:not(.contact-dots):not(.contact-rings) {
   position: relative;
   z-index: 1;
 }
 
-.contact-copy span {
-  display: inline-block;
-  margin-bottom: 16px;
-  color: #f4e6d7;
-  font-size: 13px;
-  font-weight: 800;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
+.contact-dots {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 160px;
+  height: 124px;
+  opacity: 0.15;
+  background-image: radial-gradient(#7A4B2E 1.8px, transparent 1.8px);
+  background-size: 18px 18px;
+  pointer-events: none;
 }
 
-.contact-copy h2 {
-  margin-bottom: 22px;
-  color: #fff;
-  font-size: clamp(40px, 5vw, 52px);
-  line-height: 1.06;
+.contact-rings {
+  position: absolute;
+  right: -170px;
+  bottom: 20px;
+  width: 380px;
+  height: 380px;
+  opacity: 0.06;
+  border: 52px solid #7A4B2E;
+  border-radius: 999px;
+  box-shadow:
+    0 0 0 52px rgba(122, 75, 46, 0.2),
+    0 0 0 104px rgba(122, 75, 46, 0.12);
+  pointer-events: none;
 }
 
-.contact-copy p {
-  max-width: 560px;
-  color: rgba(255, 255, 255, 0.85);
-  font-size: 18px;
-  line-height: 1.8;
+.contact-divider {
+  width: 80%;
+  height: 1px;
+  background: #E6D7C7;
 }
 
-.contact-info-card {
-  display: grid;
-  gap: 24px;
-  padding: 32px;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 24px;
-  background: rgba(255, 255, 255, 0.12);
-  backdrop-filter: blur(16px);
-  transition:
-    transform 220ms ease,
-    background 220ms ease;
+.contact-divider-top {
+  margin: 0 auto 80px;
 }
 
-.contact-info-row {
+.contact-divider-bottom {
+  margin: 80px auto 40px;
+}
+
+.contact-icon {
   display: flex;
-  gap: 14px;
-  align-items: flex-start;
-  color: #fff;
+  width: 72px;
+  height: 72px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: #F5EEE7;
+  color: #7A4B2E;
 }
 
-.contact-info-row svg {
-  margin-top: 4px;
-  color: #f4e6d7;
-  flex: 0 0 auto;
+.contact-question {
+  margin-top: 24px;
+  color: #6D5A4D;
+  font-size: 20px;
+  font-weight: 500;
+  line-height: 1.5;
 }
 
-.contact-info-row span {
+.contact-email {
   display: block;
-  margin-bottom: 5px;
-  color: rgba(255, 255, 255, 0.7);
-  font-size: 13px;
+  margin-top: 20px;
+  color: #6E442B;
+  font-size: clamp(32px, 4.4vw, 52px);
   font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  line-height: 1.1;
+  overflow-wrap: anywhere;
+  transition: color 180ms ease;
 }
 
-.contact-info-row strong {
-  display: block;
-  color: #fff;
-  font-size: 17px;
-  line-height: 1.45;
+.contact-email:hover {
+  color: #7A4B2E;
 }
 
 .contact-button {
   display: inline-flex;
-  min-height: 52px;
+  height: 64px;
   align-items: center;
   justify-content: center;
-  border-radius: 16px;
-  background: #fff;
-  color: #4a2f1f;
-  font-weight: 800;
-  transition:
-    background 180ms ease,
-    transform 180ms ease,
-    box-shadow 180ms ease;
+  gap: 16px;
+  margin-top: 34px;
+  padding: 0 40px;
+  border-radius: 18px;
+  background: linear-gradient(135deg, #7A4B2E, #925B38);
+  color: white;
+  font-size: 18px;
+  font-weight: 600;
+  box-shadow: 0 12px 30px rgba(122, 75, 46, 0.25);
+  transition: all 0.25s ease;
 }
 
 .contact-button:hover {
-  background: #f6efe7;
-  transform: translateY(-2px);
-  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.12);
+  transform: translateY(-3px);
+  box-shadow: 0 16px 34px rgba(122, 75, 46, 0.3);
+}
+
+.contact-closing {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  color: #7D6858;
+  font-size: 18px;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
+.contact-closing svg {
+  color: #7A4B2E;
+  flex: 0 0 auto;
 }
 
 .fade-up {
@@ -1001,8 +1006,7 @@ img {
 
   .hero-section,
   .audience-grid,
-  .mission-section,
-  .contact-card {
+  .mission-section {
     grid-template-columns: 1fr;
   }
 
@@ -1033,8 +1037,21 @@ img {
     justify-content: center;
   }
 
+  .contact-section {
+    width: min(100%, calc(100vw - 32px));
+    margin: 96px auto 64px;
+  }
+
   .contact-card {
-    padding: 44px;
+    padding: 68px 36px;
+  }
+
+  .contact-divider-top {
+    margin-bottom: 64px;
+  }
+
+  .contact-divider-bottom {
+    margin: 64px auto 34px;
   }
 }
 
@@ -1068,8 +1085,7 @@ img {
 
   .feature-card,
   .audience-card,
-  .mission-card,
-  .contact-info-card {
+  .mission-card {
     padding: 24px;
   }
 
@@ -1106,13 +1122,63 @@ img {
   }
 
   .contact-section {
-    padding-bottom: 86px;
+    width: min(100%, calc(100vw - 24px));
+    margin: 82px auto 54px;
   }
 
   .contact-card {
-    gap: 30px;
-    padding: 32px 22px;
+    padding: 46px 20px;
     border-radius: 26px;
+  }
+
+  .contact-divider {
+    width: 86%;
+  }
+
+  .contact-divider-top {
+    margin-bottom: 46px;
+  }
+
+  .contact-divider-bottom {
+    margin: 54px auto 30px;
+  }
+
+  .contact-icon {
+    width: 64px;
+    height: 64px;
+  }
+
+  .contact-question {
+    font-size: 17px;
+  }
+
+  .contact-email {
+    font-size: clamp(28px, 9vw, 36px);
+  }
+
+  .contact-button {
+    width: 100%;
+    max-width: 280px;
+    height: 58px;
+    padding: 0 28px;
+    border-radius: 16px;
+    font-size: 17px;
+  }
+
+  .contact-closing {
+    flex-wrap: wrap;
+    gap: 8px;
+    font-size: 16px;
+  }
+
+  .contact-dots {
+    width: 122px;
+    height: 96px;
+  }
+
+  .contact-rings {
+    right: -230px;
+    bottom: 66px;
   }
 
 }

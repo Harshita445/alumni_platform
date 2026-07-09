@@ -3,13 +3,14 @@ import {
   ArrowRight,
   Calendar,
   Check,
-  Clock3,
   FileText,
   GraduationCap,
   Handshake,
+  Heart,
   Mail,
   MessageCircle,
   Quote,
+  Send,
   ShieldCheck,
   Sparkles,
   UserRoundCheck,
@@ -237,39 +238,36 @@ export default function HomePage() {
       </section>
 
       <section className="contact-section fade-up">
-        <div className="contact-card">
-          <div className="contact-orb contact-orb-one" aria-hidden="true" />
-          <div className="contact-orb contact-orb-two" aria-hidden="true" />
+        <div className="contact-card" aria-labelledby="landing-contact-title">
+          <div className="contact-dots" aria-hidden="true" />
+          <div className="contact-rings" aria-hidden="true" />
+          <div className="contact-divider contact-divider-top" aria-hidden="true" />
 
-          <div className="contact-copy">
-            <span>Get In Touch</span>
-            <h2>Need Help?</h2>
-            <p>
-              Questions, feedback, or partnership opportunities?
-              <br />
-              We&apos;d love to hear from you and help you make the most of Alumly.
-            </p>
+          <div className="contact-icon">
+            <Mail size={34} strokeWidth={1.9} aria-hidden="true" />
           </div>
 
-          <aside className="contact-info-card">
-            <div className="contact-info-row">
-              <Mail size={20} strokeWidth={2} aria-hidden="true" />
-              <div>
-                <span>Email</span>
-                <strong>hello@alumly.in</strong>
-              </div>
-            </div>
-            <div className="contact-info-row">
-              <Clock3 size={20} strokeWidth={2} aria-hidden="true" />
-              <div>
-                <span>Support</span>
-                <strong>Response within 24-48 hours</strong>
-              </div>
-            </div>
-            <a className="contact-button" href="mailto:hello@alumly.in">
+          <p id="landing-contact-title" className="contact-question">
+            Questions, feedback or partnership ideas?
+          </p>
+
+          <a className="contact-email" href="mailto:harshitak0456@gmail.com">
+            harshitak0456@gmail.com
+          </a>
+
+          <a className="contact-button" href="mailto:harshitak0456@gmail.com">
+            <Send size={24} strokeWidth={2.1} aria-hidden="true" />
+            <span>
               Contact Us
-            </a>
-          </aside>
+            </span>
+          </a>
+
+          <div className="contact-divider contact-divider-bottom" aria-hidden="true" />
+
+          <p className="contact-closing">
+            Built with <Heart size={26} strokeWidth={1.9} aria-hidden="true" /> for
+            the Thapar community.
+          </p>
         </div>
       </section>
     </main>
