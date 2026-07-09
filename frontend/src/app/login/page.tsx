@@ -2,7 +2,15 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Briefcase, GraduationCap, LockKeyhole, Mail, RotateCcw } from "lucide-react";
+import {
+  Briefcase,
+  GraduationCap,
+  LockKeyhole,
+  Mail,
+  MessageCircle,
+  ShieldCheck,
+  UsersRound,
+} from "lucide-react";
 
 import { demoLogin, googleAuth, loginUser, resetDemoData } from "@/lib/api";
 import { useAuth } from "@/hooks/useAuth";
@@ -162,57 +170,106 @@ export default function LoginPage() {
             className="auth-campus-image"
           />
           <div className="auth-brand-overlay" />
+          <div className="auth-brand-arch auth-brand-arch-top" />
+          <div className="auth-brand-arch auth-brand-arch-bottom" />
+          <div className="auth-brand-dots" />
           <div className="auth-brand-content">
-            <img src="/logo.png" alt="" className="auth-logo" />
-            <p className="auth-brand-kicker">
-              Built for students, powered by alumni.
+            <div className="auth-brand-badge">
+              <UsersRound size={18} strokeWidth={1.8} aria-hidden="true" />
+              <span>Welcome Back</span>
+            </div>
+
+            <h2>
+              <span>Welcome</span>
+              <span>back</span>
+            </h2>
+
+            <div className="auth-brand-divider">
+              <span />
+              <strong>{"\u2726"}</strong>
+              <span />
+            </div>
+
+            <p className="auth-brand-lede">
+              Sign in to continue your journey with the Alumly community.
             </p>
-            <h2>Welcome back.</h2>
-            <p>
-              Sign in to reconnect with the Thapar alumni community.
-            </p>
+
+            <div className="auth-feature-list">
+              <div className="auth-feature-row">
+                <div className="auth-feature-icon">
+                  <ShieldCheck size={22} strokeWidth={1.8} aria-hidden="true" />
+                </div>
+                <div>
+                  <h3>Verified Alumni Network</h3>
+                  <p>Connect with trusted professionals and industry experts.</p>
+                </div>
+              </div>
+
+              <div className="auth-feature-row">
+                <div className="auth-feature-icon">
+                  <GraduationCap size={22} strokeWidth={1.8} aria-hidden="true" />
+                </div>
+                <div>
+                  <h3>Meaningful Mentorship</h3>
+                  <p>Book 1:1 or group sessions tailored to your goals.</p>
+                </div>
+              </div>
+
+              <div className="auth-feature-row">
+                <div className="auth-feature-icon">
+                  <MessageCircle size={22} strokeWidth={1.8} aria-hidden="true" />
+                </div>
+                <div>
+                  <h3>Engaged Community</h3>
+                  <p>Ask questions, join discussions, and learn from alumni.</p>
+                </div>
+              </div>
+            </div>
           </div>
         </aside>
 
         <div className="auth-form-panel">
-          <img src="/logo.png" alt="Alumly logo" className="auth-form-logo" />
+          <div className="auth-form-inner">
+            <div className="auth-header">
+              <div className="auth-eyebrow">
+                <LockKeyhole size={17} strokeWidth={2} aria-hidden="true" />
+                <span>Login to your account</span>
+              </div>
+              <h1 id="login-heading">Login to your account</h1>
+              <p>Continue your journey with the Alumly community.</p>
+            </div>
 
-          <div className="auth-header">
-            <h1 id="login-heading">Login to your account</h1>
-            <p>Continue your journey with the Alumly community.</p>
-          </div>
+            <div className="auth-credential-card">
+              <div className="auth-credential-title">
+                Demo credentials
+              </div>
+              <div className="auth-credential-line">
+                Student: <strong>student-demo@alumly.demo</strong> / <strong>StudentDemo123!</strong>
+              </div>
+              <div className="auth-credential-line">
+                Alumni: <strong>alumni-demo@alumly.demo</strong> / <strong>AlumniDemo123!</strong>
+              </div>
+              <div className="auth-credential-actions">
+                <button
+                  type="button"
+                  onClick={() => fillDemoCredentials("student")}
+                  className="auth-demo-button"
+                  style={{ ...quickFillButtonStyle, minWidth: "140px" }}
+                >
+                  Use demo student
+                </button>
+                <button
+                  type="button"
+                  onClick={() => fillDemoCredentials("alumni")}
+                  className="auth-demo-button"
+                  style={{ ...quickFillButtonStyle, minWidth: "140px" }}
+                >
+                  Use demo alumni
+                </button>
+              </div>
+            </div>
 
-          <div style={{ ...credentialBoxStyle }}>
-            <div style={{ fontSize: "13px", fontWeight: 700, color: "var(--primary)", marginBottom: "6px" }}>
-              Demo credentials
-            </div>
-            <div style={{ fontSize: "13px", color: "var(--text-secondary)" }}>
-              Student: <strong>student-demo@alumly.demo</strong> / <strong>StudentDemo123!</strong>
-            </div>
-            <div style={{ fontSize: "13px", color: "var(--text-secondary)" }}>
-              Alumni: <strong>alumni-demo@alumly.demo</strong> / <strong>AlumniDemo123!</strong>
-            </div>
-            <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", marginTop: "4px" }}>
-              <button
-                type="button"
-                onClick={() => fillDemoCredentials("student")}
-                className="auth-demo-button"
-                style={{ ...quickFillButtonStyle, minWidth: "140px" }}
-              >
-                Use demo student
-              </button>
-              <button
-                type="button"
-                onClick={() => fillDemoCredentials("alumni")}
-                className="auth-demo-button"
-                style={{ ...quickFillButtonStyle, minWidth: "140px" }}
-              >
-                Use demo alumni
-              </button>
-            </div>
-          </div>
-
-          <div style={form}>
+            <div className="auth-form-stack">
             <label className="auth-field">
               <span>College email</span>
               <div className="auth-input-wrap">
@@ -331,17 +388,12 @@ export default function LoginPage() {
               </a>
             </div>
           </div>
+          </div>
         </div>
       </section>
     </main>
   );
 }
-
-const form = {
-  display: "flex",
-  flexDirection: "column" as const,
-  gap: "22px",
-};
 
 const errorStyle = {
   color: "var(--danger)",
@@ -350,47 +402,37 @@ const errorStyle = {
   fontWeight: 600,
 };
 
-const credentialBoxStyle = {
-  border: "1px solid rgba(138, 90, 59, 0.18)",
-  background: "rgba(251, 247, 242, 0.9)",
-  borderRadius: "14px",
-  padding: "12px 14px",
-  display: "grid",
-  gap: "4px",
-  boxShadow: "0 8px 20px rgba(70, 45, 25, 0.05)",
-};
-
 const demoButtonStyle = {
-  minHeight: "56px",
+  minHeight: "60px",
   display: "inline-flex",
   alignItems: "center",
   justifyContent: "center",
   gap: "10px",
-  border: "1px solid #8a5a3b",
+  border: "1px solid #E8D9CB",
   borderRadius: "16px",
-  background: "#fbf7f2",
-  color: "#6f4328",
+  background: "#fff",
+  color: "#4F3527",
   fontSize: "16px",
   fontWeight: 700,
   cursor: "pointer",
-  boxShadow: "0 8px 18px rgba(70, 45, 25, 0.05)",
+  boxShadow: "0 10px 20px rgba(0, 0, 0, 0.04)",
   transition: "transform .25s ease, box-shadow .25s ease",
 };
 
 const quickFillButtonStyle = {
-  minHeight: "40px",
+  minHeight: "42px",
   display: "inline-flex",
   alignItems: "center",
   justifyContent: "center",
   gap: "8px",
-  border: "1px solid rgba(138, 90, 59, 0.24)",
+  border: "1px solid #E8D9CB",
   borderRadius: "999px",
-  background: "#fffaf5",
-  color: "#6f4328",
+  background: "#FFFCF8",
+  color: "#6E442B",
   fontSize: "13px",
   fontWeight: 700,
   cursor: "pointer",
-  padding: "0 12px",
+  padding: "0 16px",
   boxShadow: "0 8px 16px rgba(70, 45, 25, 0.04)",
 };
 
